@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat AI - Cuaca Dunia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 80vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: #667eea;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .ai-message {
+            background: #f1f3f5;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .input-container {
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            margin-left: 10px;
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .send-btn:hover {
+            background: #5a67d8;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: #f1f3f5;
+            color: #666;
+            border-radius: 18px;
+            align-self: flex-start;
+            font-style: italic;
+            border-bottom-left-radius: 5px;
+        }
+
+        .weather-info {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 5px;
+            border-left: 4px solid #2196F3;
+            font-size: 0.9em;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Kembali</a>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 Chat AI Cuaca Dunia</h1>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai-message">
+                Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            AI sedang mengetik...
+        </div>
+        
+        <div class="input-container">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Tanyakan tentang cuaca di negara tertentu..." autocomplete="off">
+            <button class="send-btn" id="sendBtn">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - these would normally come from a backend service
+        // For now, they're hardcoded but in a real implementation they should be fetched from the backend
+        const BACKEND_API_URL = "http://localhost:3000"; // This should match your server port
+        const WEATHER_API_KEY = "9f5da2646c399356922ecd13e8493f0b"; // This should come from backend - DO NOT expose this in production
+        const WEATHER_API = "https://api.openweathermap.org/data/2.5/weather"; // Used by backend
+
+        // DOM Elements
+        let chatMessages, chatInput, sendBtn, typingIndicator;
+
+        // Conversation history
+        let conversationHistory = [
+            { 
+                role: "system", 
+                content: "Kamu adalah asisten AI cuaca yang ramah dan informatif" 
+            },
+            { 
+                role: "assistant", 
+                content: "Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!" 
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize DOM elements
+            chatMessages = document.getElementById('chatMessages');
+            chatInput = document.getElementById('chatInput');
+            sendBtn = document.getElementById('sendBtn');
+            typingIndicator = document.getElementById('typingIndicator');
+            
+            // Check if elements exist before attaching event listeners
+            if (!chatMessages || !chatInput || !sendBtn || !typingIndicator) {
+                console.error('One or more required DOM elements not found');
+                return;
+            }
+            
+            // Event listeners
+            sendBtn.addEventListener('click', handleSendMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleSendMessage();
+                }
+            });
+
+            // Initial focus on input
+            chatInput.focus();
+        });
+
+        // Fungsi 1: Tambah message ke chat
+        function addMessage(text, isUser = false) {
+            if (!chatMessages) {
+                console.error('chatMessages element not found');
+                return;
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            // Check if text contains weather info to format it specially
+            if (text.includes('Suhu:') && text.includes('Kondisi:')) {
+                // Format as weather info
+                messageDiv.innerHTML = `<div>${text.split('Data Cuaca')[0]}<br><div class="weather-info">${text.split('Data Cuaca:')[1] || text}</div></div>`;
+            } else {
+                // Use innerHTML to render HTML formatting (bold, italic, etc.)
+                messageDiv.innerHTML = text;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // Add to conversation history
+            const role = isUser ? "user" : "assistant";
+            conversationHistory.push({ role: role, content: text });
+            
+            // Keep conversation history to a reasonable size (last 10 messages + system message)
+            if (conversationHistory.length > 11) {
+                conversationHistory = [conversationHistory[0], ...conversationHistory.slice(-10)];
+            }
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Fungsi 2: Ambil data cuaca dari OpenWeatherMap (via backend)
+        async function getWeatherData(city) {
+            try {
+                console.log(`Fetching weather data for: ${city}`);
+                
+                // In a real implementation, this would be a request to our backend
+                // which securely handles the API key
+                const response = await fetch(
+                    `${WEATHER_API}?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=id`
+                );
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Kota "${city}" tidak ditemukan`);
+                    } else if (response.status === 401) {
+                        throw new Error('API key cuaca tidak valid');
+                    } else {
+                        throw new Error(`Gagal mendapatkan data cuaca: ${response.status}`);
+                    }
+                }
+                
+                const data = await response.json();
+                console.log('Weather data received:', data);
+                return data;
+            } catch (error) {
+                console.error('Error getting weather data:', error);
+                throw error; // Re-throw so calling function can handle it
+            }
+        }
+
+        // Fungsi 3: Deteksi pertanyaan cuaca
+        function isWeatherQuery(message) {
+            const weatherKeywords = [
+                'cuaca', 'weather', 'suhu', 'hujan', 'panas', 'dingin', 
+                'angin', 'awan', 'berawan', 'hujan', 'salju', 'kondisi langit',
+                'cerah', 'mendung', 'badai', 'kelembaban', 'tekanan udara'
+            ];
+            const lowerMessage = message.toLowerCase();
+            return weatherKeywords.some(keyword => 
+                lowerMessage.includes(keyword)
+            );
+        }
+
+        // Fungsi 4: Ekstrak nama kota dari teks
+        function extractCityName(message) {
+            // Pattern 1: "cuaca di [city]" or "weather in [city]"
+            const diPattern = /(?:di|in)\s+([A-Za-z][\w\s]*?)(?:\s|$|,|\.)/i;
+            const diMatch = message.match(diPattern);
+            if (diMatch && diMatch[1]) {
+                return diMatch[1].trim();
+            }
+            
+            // Pattern 2: "[city] weather" or "[city] cuaca"
+            const pattern2 = /^([A-Za-z][\w\s]*?)\s+(?:weather|cuaca|suhu|cuacanya)/i;
+            const match2 = message.match(pattern2);
+            if (match2 && match2[1]) {
+                return match2[1].trim();
+            }
+            
+            // Pattern 3: Look for capitalized words that might be city names
+            const capitalPattern = /[.!?]?\s*([A-Z][a-z]+(?:\s[A-Z][a-z]+)*)/g;
+            let capitalMatch;
+            const candidates = [];
+            while ((capitalMatch = capitalPattern.exec(message)) !== null) {
+                candidates.push(capitalMatch[1]);
+            }
+            
+            // Return the first capitalized word that's not a common word
+            const commonWords = ['Apa', 'Apakah', 'Bagaimana', 'Cuaca', 'Suhu', 'Hujan', 'Angin', 'Awan', 'Berawan', 'Indonesia', 'Jakarta', 'Bandung', 'Surabaya'];
+            for (const candidate of candidates) {
+                const word = candidate.trim();
+                if (!commonWords.some(common => candidate.toLowerCase().includes(common.toLowerCase()))) {
+                    return word;
+                }
+            }
+            
+            // If nothing else works, return the last word that seems like a potential city name
+            const words = message.split(/\s+/);
+            for (let i = words.length - 1; i >= 0; i--) {
+                const word = words[i].replace(/[.,!?]/g, '');
+                if (word.length > 2 && 
+                    word[0] === word[0].toUpperCase() && 
+                    !['cuaca', 'weather', 'suhu', 'apa', 'apakah', 'bagaimana', 'di', 'in', 'the', 'and', 'or', 'for', 'to', 'of', 'is'].includes(word.toLowerCase())) {
+                    return word;
+                }
+            }
+            
+            return null;
+        }
+
+        // Fungsi 5: Kirim ke Gemini AI (via backend)
+        async function sendToGemini(message, weatherContext = "") {
+            try {
+                // In a real implementation, this would be a request to our backend
+                // which securely handles the Gemini API key
+                // For now, I'll show the structure of how it would work
+                const response = await fetch(`${BACKEND_API_URL}/api/gemini`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        weatherContext: weatherContext
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Gemini API error:', errorData);
+                    throw new Error(`API error: ${response.status} - ${JSON.stringify(errorData)}`);
+                }
+
+                const data = await response.json();
+                
+                // Our backend returns the text directly in the 'text' field
+                if (data.text) {
+                    return data.text;
+                } else {
+                    console.error('Unexpected API response:', data);
+                    throw new Error('Respons dari API tidak sesuai format yang diharapkan');
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                throw error; // Re-throw so calling function can handle it
+            }
+        }
+
+        // Format weather data
+        function formatWeatherData(weatherData, city) {
+            if (!weatherData) return `Tidak dapat menemukan data cuaca untuk ${city}.`;
+            
+            return `Data Cuaca untuk ${city}, ${weatherData.sys.country}:
+- Suhu: ${Math.round(weatherData.main.temp)}°C (terasa seperti ${Math.round(weatherData.main.feels_like)}°C)
+- Kondisi: ${weatherData.weather[0].description}
+- Kelembaban: ${weatherData.main.humidity}%
+- Tekanan: ${weatherData.main.pressure} hPa
+- Kecepatan angin: ${weatherData.wind.speed} m/s
+- Visibilitas: ${(weatherData.visibility / 1000).toFixed(1)} km`;
+        }
+
+        // Get weather information and format for AI
+        async function getWeatherForAI(message) {
+            const cityName = extractCityName(message);
+            if (!cityName) {
+                throw new Error("Maaf, saya tidak dapat mengenali nama kota dari pertanyaan Anda.");
+            }
+            
+            const weatherData = await getWeatherData(cityName);
+            return formatWeatherData(weatherData, cityName);
+        }
+
+        // Handle sending a message
+        async function handleSendMessage() {
+            // Check if DOM elements are available
+            if (!chatInput || !chatMessages) {
+                console.error('DOM elements not available');
+                addMessage("Terjadi kesalahan: elemen chat tidak ditemukan", false);
+                return;
+            }
+            
+            const message = chatInput.value.trim();
+            console.log('Message received:', message);
+            
+            if (!message) {
+                console.log('Message is empty, returning');
+                return;
+            }
+
+            // Add user message to chat
+            addMessage(message, true);
+            chatInput.value = '';
+
+            // Show typing indicator
+            showTyping();
+
+            try {
+                let aiResponse = '';
+                
+                // If it's a weather query, get weather data first
+                if (isWeatherQuery(message)) {
+                    console.log('Weather query detected, fetching data...');
+                    try {
+                        const weatherContext = await getWeatherForAI(message);
+                        console.log('Weather context:', weatherContext);
+                        aiResponse = await sendToGemini(message, weatherContext);
+                    } catch (weatherError) {
+                        // If weather API fails, still try to respond
+                        console.log('Weather API failed, sending to AI without weather context:', weatherError.message);
+                        const fallbackMessage = `Saya tidak dapat mengambil data cuaca untuk kota tersebut karena: ${weatherError.message}. Namun, saya tetap akan mencoba membantu Anda.`;
+                        aiResponse = await sendToGemini(message + ". " + fallbackMessage);
+                    }
+                } else {
+                    // For non-weather queries, send directly to AI
+                    console.log('Non-weather query, sending directly to AI');
+                    aiResponse = await sendToGemini(message);
+                }
+
+                console.log('AI response:', aiResponse);
+                
+                // Add AI response to chat, ensuring it's not empty
+                if (aiResponse && aiResponse.trim().length > 0) {
+                    addMessage(aiResponse, false);
+                } else {
+                    addMessage("Maaf, saya tidak bisa menghasilkan jawaban saat ini. Silakan coba lagi.", false);
+                }
+            } catch (error) {
+                console.error('Error handling message:', error);
+                
+                // Provide user-friendly error message
+                if (error.message.includes('not found')) {
+                    addMessage(`Maaf, ${error.message}. Silakan coba nama kota yang lain.`, false);
+                } else if (error.message.includes('terlalu banyak')) {
+                    addMessage("Maaf, saat ini server sedang sibuk. Silakan coba beberapa saat lagi.", false);
+                } else {
+                    addMessage(`Maaf, terjadi kesalahan: ${error.message || 'Tidak dapat memproses permintaan Anda saat ini.'} Silakan coba lagi.`, false);
+                }
+            } finally {
+                hideTyping();
+            }
+        }
+
+        // Show typing indicator
+        function showTyping() {
+            if (typingIndicator) {
+                typingIndicator.style.display = 'block';
+            }
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // Hide typing indicator
+        function hideTyping() {
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Explorer - Informasi Negara & Cuaca</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* AI Chat Section Styles */
+        .ai-chat-section {
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .ai-chat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ai-chat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            animation: rotate 10s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .ai-chat-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .ai-chat-card p {
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+            font-size: 1.1rem;
+        }
+        
+        .chat-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .chat-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chat-button:active {
+            transform: translateY(1px);
+        }
+        
+        .button-text {
+            margin-right: 10px;
+        }
+        
+        .button-icon {
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="earth-background"></div>
+    <div class="stars"></div>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>🌍 World Explorer</h1>
+                <p class="subtitle">Informasi Negara & Prediksi Cuaca - Cloud Computing UTS</p>
+                <p class="group-info">Kelompok: Cloud Innovators | NIM: 202501001, 202501002, 202501003</p>
+            </div>
+        </header>
+
+        <main>
+            <!-- AI Chat Section -->
+            <div class="ai-chat-section">
+                <div class="ai-chat-card">
+                    <h2>🤖 Chat dengan AI Cuaca Dunia</h2>
+                    <p>Tanyakan informasi cuaca secara real-time dari seluruh negara</p>
+                    <a href="chat-ai.html" class="chat-button">
+                        <span class="button-text">Buka Chat AI</span>
+                        <span class="button-icon">💬</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <div class="search-card">
+                    <h2>🔍 Jelajahi Informasi Negara & Cuaca</h2>
+                    <div class="input-group">
+                        <input type="text" id="countryInput" placeholder="Ketik nama negara (English)...">
+                        <button id="searchBtn">🌤️ Cari Informasi & Cuaca</button>
+                    </div>
+                    <div class="examples">
+                        <small>💡 Contoh: indonesia, japan, france, brazil, germany, canada</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Mengambil data dari cloud services...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="result" class="result-section"></div>
+
+            <!-- Weather Prediction Section -->
+            <div id="weatherSection" class="weather-section" style="display: none;">
+                <!-- Weather content will be inserted by JavaScript -->
+            </div>
+
+            <!-- Cloud Computing Info Section -->
+            <div class="cloud-info-section">
+                <h3>☁️ Keterkaitan dengan Cloud Computing</h3>
+                <div class="cloud-features">
+                    <div class="cloud-card">
+                        <div class="cloud-icon">🌐</div>
+                        <h4>Multi-Cloud Integration</h4>
+                        <p>Menggunakan REST Countries API & OpenWeatherMap sebagai layanan cloud terintegrasi</p>
+                    </div>
+                    <div class="cloud-card">
+                        <div class="cloud-icon">⚡</div>
+                        <h4>Real-time Data</h4>
+                        <p>Data cuaca real-time dari ratusan stasiun meteorologi global</p>
+                    </div>
+                    <div class="cloud-card">
+                        <div class="cloud-icon">📊</div>
+                        <h4>Data Analytics</h4>
+                        <p>Analisis pola cuaca dan prediksi musim berbasis data historis</p>
+                    </div>
+                    <div class="cloud-card">
+                        <div class="cloud-icon">🔮</div>
+                        <h4>AI Prediction</h4>
+                        <p>Prediksi cuaca dan musim menggunakan algoritma machine learning</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="error" class="error-section" style="display: none;"></div>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <div class="integration-info">
+                    <h4>🛠️ Multi-Cloud Integration</h4>
+                    <p><strong>REST Countries API</strong> - Cloud Data Service</p>
+                    <p><strong>OpenWeatherMap API</strong> - Weather Data Service</p>
+                    <p><strong>OpenStreetMap API</strong> - Cloud Mapping Service</p>
+                    <p><strong>Real-time Integration</strong> - Multiple Cloud Platforms</p>
+                </div>
+                <p class="copyright">© 2025 - Cloud Computing UTS - STT Wastukancana</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
