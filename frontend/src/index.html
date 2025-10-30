@@ -5,337 +5,185 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>World Explorer - Informasi Negara & Cuaca</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* AI Chat Section Styles - TIDAK PERLU LAGI */
-        /* .ai-chat-section { ... } DIHAPUS */
-
-        /* Floating Chat Widget Styles */
-        .chat-widget {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 380px;
-            height: 500px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-            transition: all 0.3s ease;
-            border: 2px solid #667eea;
-        }
-
-        .chat-widget.minimized {
-            height: 60px;
-            overflow: hidden;
-        }
-
-        .chat-widget.hidden {
-            display: none;
-        }
-
-        .chat-widget-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 15px;
-            border-radius: 13px 13px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: move;
-        }
-
-        .chat-widget-controls button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            margin-left: 10px;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .chat-widget-controls button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .chat-widget-body {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background: #f8f9fa;
-        }
-
-        .chat-widget-input {
-            padding: 15px;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 10px;
-            background: white;
-            border-radius: 0 0 13px 13px;
-        }
-
-        .chat-widget-input input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 20px;
-            outline: none;
-            font-size: 14px;
-        }
-
-        .chat-widget-input input:focus {
-            border-color: #667eea;
-        }
-
-        .chat-widget-input button {
-            padding: 12px 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .chat-widget-input button:hover {
-            background: #5a67d8;
-        }
-
-        /* Chat Toggle Button */
-        .chat-toggle-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 999;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-
-        .chat-toggle-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        /* Chat Message Styles (dari chat-ai.html) */
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .message {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            word-wrap: break-word;
-            position: relative;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom Tailwind config for CSS variables -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#667eea',
+                        secondary: '#764ba2',
+                        accent: '#f093fb',
+                        dark: '#2c3e50',
+                        light: '#f8f9fa',
+                        success: '#4CAF50',
+                        warning: '#ff9800',
+                        error: '#f44336',
+                        spring: '#4CAF50',
+                        summer: '#FF9800',
+                        autumn: '#FF5722',
+                        winter: '#2196F3',
+                    }
+                }
             }
         }
-
-        .user-message {
-            background: #667eea;
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
-        }
-
-        .ai-message {
-            background: #ffffff;
-            color: #333;
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .typing-indicator {
-            display: none;
-            padding: 10px 14px;
-            background: #f1f3f5;
-            color: #666;
-            border-radius: 18px;
-            align-self: flex-start;
-            font-style: italic;
-            border-bottom-left-radius: 5px;
-        }
-
-        .weather-info {
-            background: #e3f2fd;
-            border-radius: 8px;
-            padding: 8px;
-            margin-top: 5px;
-            border-left: 3px solid #2196F3;
-            font-size: 0.85em;
-        }
-
-        .error-message {
-            background: #ffebee;
-            color: #c62828;
-            padding: 8px;
-            border-radius: 8px;
-            margin: 5px 0;
-            font-size: 0.85em;
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .bg-stars {
+                background-image: 
+                    radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+                    radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+                    radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                    radial-gradient(1px 1px at 130px 80px, #fff, transparent),
+                    radial-gradient(2px 2px at 160px 30px, #eee, transparent);
+            }
         }
     </style>
 </head>
 
-<body>
+<body class="font-sans text-gray-700 min-h-screen overflow-x-hidden relative">
     <!-- Animated Background -->
-    <div class="earth-background"></div>
-    <div class="stars"></div>
+    <div class="fixed top-0 left-0 w-full h-full bg-gradient-[radial-gradient(circle_at_20%_50%,rgba(102,126,234,0.1)_0%,rgba(118,75,162,0.05)_30%,transparent_70%),linear-gradient(135deg,#0f2027,#203a43,#2c5364)] z-[-2] animate-[earthRotate_60s_linear_infinite]"></div>
+    <div class="fixed top-0 left-0 w-full h-full bg-stars bg-repeat bg-[200px_100px] z-[-1] animate-[starsMove_100s_linear_infinite]"></div>
 
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>🌍 World Explorer</h1>
-                <p class="subtitle">Informasi Negara & Prediksi Cuaca - Cloud Computing UTS</p>
-                <p class="group-info">Kelompok: Cloud Innovators | NIM: 202501001, 202501002, 202501003</p>
+    <div class="max-w-6xl mx-auto bg-white bg-opacity-95 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden mt-5 mb-5 relative z-10">
+        <header class="bg-gradient-to-br from-primary to-secondary text-white py-10 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 bottom-0 bg-[linear-gradient(45deg,transparent_49%,rgba(255,255,255,0.1)_50%,transparent_51%),linear-gradient(-45deg,transparent_49%,rgba(255,255,255,0.1)_50%,transparent_51%)] bg-[length:20px_20px] opacity-30"></div>
+            <div class="relative z-20">
+                <h1 class="text-5xl mb-4 text-shadow bg-gradient-to-r from-white to-cyan-100 bg-clip-text text-transparent">🌍 World Explorer</h1>
+                <p class="text-xl mb-4 opacity-90 font-light">Informasi Negara & Prediksi Cuaca - Cloud Computing UTS</p>
+                <p class="opacity-80 bg-white bg-opacity-20 py-3 px-5 rounded-full inline-block backdrop-blur-sm">Kelompok: Cloud Innovators | NIM: 202501001, 202501002, 202501003</p>
             </div>
         </header>
 
-        <main>
-            <!-- HAPUS AI CHAT SECTION YANG LAMA -->
-            <!-- <div class="ai-chat-section"> ... </div> DIHAPUS -->
-
+        <main class="p-10">
             <!-- Search Section -->
-            <div class="search-section">
-                <div class="search-card">
-                    <h2>🔍 Jelajahi Informasi Negara & Cuaca</h2>
-                    <div class="input-group">
-                        <input type="text" id="countryInput" placeholder="Ketik nama negara (English)...">
-                        <button id="searchBtn">🌤️ Cari Informasi & Cuaca</button>
+            <div class="mb-10">
+                <div class="bg-gradient-to-br from-white to-gray-100 p-8 rounded-xl shadow-lg border border-gray-100">
+                    <h2 class="text-2xl mb-5 text-center text-dark">🔍 Jelajahi Informasi Negara & Cuaca</h2>
+                    <div class="flex gap-4 mb-4">
+                        <input type="text" id="countryInput" placeholder="Ketik nama negara (English)..." class="flex-1 p-5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(102,126,234,0.1)] transition-transform duration-300 -translate-y-1 bg-white">
+                        <button id="searchBtn" class="p-5 bg-gradient-to-br from-primary to-secondary text-white border-0 rounded-xl cursor-pointer text-lg font-bold transition-all duration-300 whitespace-nowrap hover:-translate-y-1 hover:shadow-[0_10px_25px_rgba(102,126,234,0.4)] active:translate-y-0 active:shadow-[0_5px_15px_rgba(102,126,234,0.4)]">🌤️ Cari Informasi & Cuaca</button>
                     </div>
-                    <div class="examples">
-                        <small>💡 Contoh: indonesia, japan, france, brazil, germany, canada</small>
+                    <div class="text-center text-gray-500">
+                        <small class="text-sm">💡 Contoh: indonesia, japan, france, brazil, germany, canada</small>
                     </div>
                 </div>
             </div>
 
             <!-- Loading Indicator -->
-            <div id="loading" class="loading" style="display: none;">
-                <div class="spinner"></div>
+            <div id="loading" class="loading text-center py-10 text-primary hidden">
+                <div class="border-4 border-t-primary border-gray-300 rounded-full w-12 h-12 mx-auto mb-5 animate-spin"></div>
                 <p>Mengambil data dari cloud services...</p>
             </div>
 
             <!-- Results Section -->
-            <div id="result" class="result-section"></div>
+            <div id="result" class="result-section bg-white rounded-xl p-8 mt-5 shadow-lg border border-gray-100"></div>
 
             <!-- Weather Prediction Section -->
-            <div id="weatherSection" class="weather-section" style="display: none;">
+            <div id="weatherSection" class="weather-section rounded-2xl p-8 mt-8 text-white hidden" style="background: linear-gradient(135deg, #667eea, #764ba2);">
                 <!-- Weather content will be inserted by JavaScript -->
             </div>
 
             <!-- Cloud Computing Info Section -->
-            <div class="cloud-info-section">
-                <h3>☁️ Keterkaitan dengan Cloud Computing</h3>
-                <div class="cloud-features">
-                    <div class="cloud-card">
-                        <div class="cloud-icon">🌐</div>
-                        <h4>Multi-Cloud Integration</h4>
-                        <p>Menggunakan REST Countries API & OpenWeatherMap sebagai layanan cloud terintegrasi</p>
+            <div class="cloud-info-section rounded-2xl p-10 mt-12 text-white" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                <h3 class="text-center text-3xl mb-8 text-shadow">☁️ Keterkaitan dengan Cloud Computing</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
+                    <div class="bg-white bg-opacity-10 p-7 rounded-xl text-center backdrop-blur-md border border-white border-opacity-20 transition-transform duration-300 hover:-translate-y-2 hover:bg-opacity-15">
+                        <div class="text-4xl mb-4">🌐</div>
+                        <h4 class="text-lg font-medium mb-3">Multi-Cloud Integration</h4>
+                        <p class="opacity-90 leading-relaxed">Menggunakan REST Countries API & OpenWeatherMap sebagai layanan cloud terintegrasi</p>
                     </div>
-                    <div class="cloud-card">
-                        <div class="cloud-icon">⚡</div>
-                        <h4>Real-time Data</h4>
-                        <p>Data cuaca real-time dari ratusan stasiun meteorologi global</p>
+                    <div class="bg-white bg-opacity-10 p-7 rounded-xl text-center backdrop-blur-md border border-white border-opacity-20 transition-transform duration-300 hover:-translate-y-2 hover:bg-opacity-15">
+                        <div class="text-4xl mb-4">⚡</div>
+                        <h4 class="text-lg font-medium mb-3">Real-time Data</h4>
+                        <p class="opacity-90 leading-relaxed">Data cuaca real-time dari ratusan stasiun meteorologi global</p>
                     </div>
-                    <div class="cloud-card">
-                        <div class="cloud-icon">📊</div>
-                        <h4>Data Analytics</h4>
-                        <p>Analisis pola cuaca dan prediksi musim berbasis data historis</p>
+                    <div class="bg-white bg-opacity-10 p-7 rounded-xl text-center backdrop-blur-md border border-white border-opacity-20 transition-transform duration-300 hover:-translate-y-2 hover:bg-opacity-15">
+                        <div class="text-4xl mb-4">📊</div>
+                        <h4 class="text-lg font-medium mb-3">Data Analytics</h4>
+                        <p class="opacity-90 leading-relaxed">Analisis pola cuaca dan prediksi musim berbasis data historis</p>
                     </div>
-                    <div class="cloud-card">
-                        <div class="cloud-icon">🔮</div>
-                        <h4>AI Prediction</h4>
-                        <p>Prediksi cuaca dan musim menggunakan algoritma machine learning</p>
+                    <div class="bg-white bg-opacity-10 p-7 rounded-xl text-center backdrop-blur-md border border-white border-opacity-20 transition-transform duration-300 hover:-translate-y-2 hover:bg-opacity-15">
+                        <div class="text-4xl mb-4">🔮</div>
+                        <h4 class="text-lg font-medium mb-3">AI Prediction</h4>
+                        <p class="opacity-90 leading-relaxed">Prediksi cuaca dan musim menggunakan algoritma machine learning</p>
                     </div>
                 </div>
             </div>
 
-            <div id="error" class="error-section" style="display: none;"></div>
+            <div id="error" class="error-section bg-gradient-to-br from-red-50 to-red-100 border-2 border-error rounded-xl p-8 text-center mt-5 hidden" style="color: #c62828;"></div>
         </main>
 
-        <footer>
-            <div class="footer-content">
-                <div class="integration-info">
-                    <h4>🛠️ Multi-Cloud Integration</h4>
-                    <p><strong>REST Countries API</strong> - Cloud Data Service</p>
-                    <p><strong>OpenWeatherMap API</strong> - Weather Data Service</p>
-                    <p><strong>OpenStreetMap API</strong> - Cloud Mapping Service</p>
-                    <p><strong>Real-time Integration</strong> - Multiple Cloud Platforms</p>
+        <footer class="bg-gradient-to-br from-dark to-gray-700 text-white py-10">
+            <div class="max-w-4xl mx-auto">
+                <div class="mb-8">
+                    <h4 class="mb-5 text-xl text-blue-200">🛠️ Multi-Cloud Integration</h4>
+                    <p class="mb-3 opacity-90"><strong>REST Countries API</strong> - Cloud Data Service</p>
+                    <p class="mb-3 opacity-90"><strong>OpenWeatherMap API</strong> - Weather Data Service</p>
+                    <p class="mb-3 opacity-90"><strong>OpenStreetMap API</strong> - Cloud Mapping Service</p>
+                    <p class="mb-3 opacity-90"><strong>Real-time Integration</strong> - Multiple Cloud Platforms</p>
                 </div>
-                <p class="copyright">© 2025 - Cloud Computing UTS - STT Wastukancana</p>
+                <p class="text-center text-blue-gray-300 text-sm mt-8 pt-5 border-t border-white border-opacity-10">© 2025 - Cloud Computing UTS - STT Wastukancana</p>
             </div>
         </footer>
     </div>
 
     <!-- Floating Chat Widget -->
-    <div id="chatWidget" class="chat-widget hidden">
-        <div class="chat-widget-header">
+    <div id="chatWidget" class="chat-widget fixed bottom-5 right-5 w-96 h-[500px] bg-white rounded-xl shadow-2xl z-50 transition-all duration-300 border-2 border-primary hidden" style="display: none;">
+        <div class="chat-widget-header bg-gradient-to-br from-primary to-secondary text-white p-4 rounded-t-xl flex justify-between items-center cursor-move">
             <span>🤖 AI Cuaca Assistant</span>
-            <div class="chat-widget-controls">
-                <button id="minimizeChat">−</button>
-                <button id="closeChat">×</button>
+            <div class="chat-widget-controls flex">
+                <button id="minimizeChat" class="bg-none border-0 text-white text-lg cursor-pointer ml-3 w-6 h-6 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-20">−</button>
+                <button id="closeChat" class="bg-none border-0 text-white text-lg cursor-pointer ml-3 w-6 h-6 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-20">×</button>
             </div>
         </div>
-        <div class="chat-widget-body">
-            <div class="chat-messages" id="chatMessages">
-                <div class="message ai-message">
+        <div class="chat-widget-body flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-50">
+            <div class="chat-messages flex-1 overflow-y-auto flex flex-col gap-3" id="chatMessages">
+                <div class="message ai-message bg-white text-gray-700 self-start rounded-xl p-4 py-3.5 border border-gray-200 rounded-bl-md">
                     Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!
                 </div>
             </div>
-            <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-indicator p-4 bg-gray-100 rounded-xl italic self-start rounded-bl-md" id="typingIndicator" style="display: none;">
                 AI sedang mengetik...
             </div>
         </div>
-        <div class="chat-widget-input">
-            <input type="text" id="chatInput" placeholder="Tanyakan tentang cuaca di negara tertentu..."
-                autocomplete="off">
-            <button id="sendBtn">Kirim</button>
+        <div class="chat-widget-input p-4 border-t border-gray-200 bg-white rounded-b-xl flex gap-3">
+            <input type="text" id="chatInput" placeholder="Tanyakan tentang cuaca di negara tertentu..." class="flex-1 p-3 border-2 border-gray-300 rounded-full focus:outline-none focus:border-primary" autocomplete="off">
+            <button id="sendBtn" class="p-3 bg-primary text-white border-0 rounded-full cursor-pointer transition-colors duration-300 hover:bg-indigo-600">Kirim</button>
         </div>
     </div>
 
     <!-- Floating Chat Toggle Button -->
-    <button id="chatToggle" class="chat-toggle-btn">
+    <button id="chatToggle" class="chat-toggle-btn fixed bottom-5 right-5 bg-gradient-to-br from-primary to-secondary text-white px-5 py-4 rounded-full cursor-pointer shadow-2xl z-40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] font-bold">
         🤖 Chat Cuaca
     </button>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
+    
+    <script>
+        // Add keyframe animations for stars and earth background
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes earthRotate {
+                0% { background-position: 0% 0%; }
+                100% { background-position: 100% 100%; }
+            }
+            @keyframes starsMove {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-100px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 
 </html>

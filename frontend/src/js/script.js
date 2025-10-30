@@ -41,6 +41,8 @@ function initChatWidget() {
   // Show chat widget
   chatToggle.addEventListener("click", () => {
     chatWidget.classList.remove("hidden");
+    chatWidget.classList.remove("h-15");
+    chatWidget.classList.add("h-[500px]");
     chatToggle.style.display = "none";
     // Focus ke input ketika widget dibuka
     setTimeout(() => {
@@ -50,7 +52,16 @@ function initChatWidget() {
 
   // Minimize chat widget
   minimizeBtn.addEventListener("click", () => {
-    chatWidget.classList.add("minimized");
+    chatWidget.classList.toggle("minimized");
+    if (chatWidget.classList.contains("minimized")) {
+      chatWidget.classList.remove("h-[500px]");
+      chatWidget.classList.add("h-15");
+      chatWidget.style.overflow = "hidden";
+    } else {
+      chatWidget.classList.add("h-[500px]");
+      chatWidget.classList.remove("h-15");
+      chatWidget.style.overflow = "visible";
+    }
     chatToggle.style.display = "block";
   });
 
@@ -134,7 +145,9 @@ function addMessage(text, isUser = false) {
   }
 
   const messageDiv = document.createElement("div");
-  messageDiv.className = `message ${isUser ? "user-message" : "ai-message"}`;
+  messageDiv.className = `message ${isUser ? 
+    "self-end bg-primary text-white p-4 py-3.5 rounded-xl rounded-bl-md" : 
+    "self-start bg-white text-gray-700 p-4 py-3.5 rounded-xl rounded-br-md border border-gray-200"}`;
 
   // Check if text contains weather info to format it specially
   if (text.includes("Suhu:") && text.includes("Kondisi:")) {
@@ -555,48 +568,46 @@ function displayCountryInfo(country) {
     : "Tidak ada data";
 
   resultSection.innerHTML = `
-        <div class="country-header">
-            <div class="country-flag">${country.flag}</div>
-            <div class="country-name">
-                <h2>${country.name.common}</h2>
-                <p><em>${country.name.official}</em></p>
+        <div class="flex items-center gap-5 mb-8 pb-5 border-b border-gray-200">
+            <div class="text-5xl filter drop-shadow-lg">${country.flag}</div>
+            <div>
+                <h2 class="text-2xl text-dark mb-1">${country.name.common}</h2>
+                <p class="text-gray-500 italic"><em>${country.name.official}</em></p>
             </div>
         </div>
 
-        <div class="enhanced-layout">
-            <div class="country-details">
-                <div class="detail-item">
-                    <strong>🏛️ Ibu Kota</strong>
-                    <span>${
-                      country.capital ? country.capital[0] : "Tidak ada data"
-                    }</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">🏛️ Ibu Kota</strong>
+                    <span>${country.capital ? country.capital[0] : "Tidak ada data"}</span>
                 </div>
-                <div class="detail-item">
-                    <strong>👥 Populasi</strong>
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">👥 Populasi</strong>
                     <span>${country.population.toLocaleString()} jiwa</span>
                 </div>
-                <div class="detail-item">
-                    <strong>🌍 Region</strong>
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">🌍 Region</strong>
                     <span>${country.region}</span>
                 </div>
-                <div class="detail-item">
-                    <strong>🗺️ Subregion</strong>
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">🗺️ Subregion</strong>
                     <span>${country.subregion || "Tidak ada data"}</span>
                 </div>
-                <div class="detail-item">
-                    <strong>💰 Mata Uang</strong>
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">💰 Mata Uang</strong>
                     <span>${currencies}</span>
                 </div>
-                <div class="detail-item">
-                    <strong>🗣️ Bahasa</strong>
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">🗣️ Bahasa</strong>
                     <span>${languages}</span>
                 </div>
-                <div class="detail-item">
-                    <strong>⏰ Zona Waktu</strong>
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">⏰ Zona Waktu</strong>
                     <span>${timezones}</span>
                 </div>
-                <div class="detail-item">
-                    <strong>🚗 Sisi Mengemudi</strong>
+                <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
+                    <strong class="text-primary text-xs uppercase tracking-wider block mb-2">🚗 Sisi Mengemudi</strong>
                     <span>${
                       country.car?.side
                         ? country.car.side === "left"
@@ -607,22 +618,26 @@ function displayCountryInfo(country) {
                 </div>
             </div>
 
-            <div class="coordinates">
-                <strong>📍 Koordinat Geografis</strong>
-                <p><strong>Latitude:</strong> ${coordinates[0]}</p>
-                <p><strong>Longitude:</strong> ${coordinates[1]}</p>
-                <p><small>Koordinat digunakan untuk menampilkan peta dan prediksi cuaca</small></p>
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200 relative overflow-hidden">
+                <div class="absolute top-3 right-4 text-2xl opacity-30">📍</div>
+                <strong class="text-blue-700 block mb-4 text-lg">📍 Koordinat Geografis</strong>
+                <p class="font-mono bg-white bg-opacity-70 p-2 pl-3 border-l-4 border-blue-500 mb-2"><strong>Latitude:</strong> ${coordinates[0]}</p>
+                <p class="font-mono bg-white bg-opacity-70 p-2 pl-3 border-l-4 border-blue-500 mb-2"><strong>Longitude:</strong> ${coordinates[1]}</p>
+                <p class="text-sm"><small>Koordinat digunakan untuk menampilkan peta dan prediksi cuaca</small></p>
             </div>
         </div>
 
         <div class="map-section">
-            <h3>🗺️ Peta Lokasi ${country.name.common}</h3>
-            <div id="countryMap"></div>
+            <h3 class="text-2xl text-dark mb-5 flex items-center gap-3 font-medium">
+                <span>🗺️</span>
+                <span>Peta Lokasi ${country.name.common}</span>
+            </h3>
+            <div id="countryMap" class="w-full h-80 rounded-xl border border-gray-200"></div>
         </div>
 
-        <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #e8f4fd, #bbdefb); border-radius: 12px; border-left: 4px solid #2196F3;">
-            <strong style="color: #1976D2; font-size: 1.1em;">☁️ Cloud Computing Integration</strong>
-            <p style="margin: 15px 0 0 0; font-size: 0.95em; line-height: 1.6;">
+        <div class="mt-8 p-5 bg-gradient-to-br from-sky-50 to-blue-100 rounded-xl border-l-4 border-blue-500">
+            <strong class="text-blue-700 text-xl block mb-0">☁️ Cloud Computing Integration</strong>
+            <p class="mt-4 mb-0 text-sm leading-relaxed">
                 <strong>REST Countries API</strong> - Cloud Data Service (SaaS)<br>
                 <strong>OpenWeatherMap API</strong> - Weather Data Service<br>
                 <strong>OpenStreetMap API</strong> - Cloud Mapping Service<br>
@@ -641,61 +656,53 @@ function displayWeatherInfo(weatherData, countryName, coordinates) {
   const season = predictSeason(coordinates[0], new Date().getMonth());
 
   weatherSection.innerHTML = `
-        <div class="weather-header">
-            <h3>🌤️ Informasi Cuaca di ${weatherData.name}, ${countryName}</h3>
-            <p>Data real-time dari stasiun meteorologi</p>
+        <div class="weather-header text-center mb-8">
+            <h3 class="text-3xl mb-3 text-shadow">🌤️ Informasi Cuaca di ${weatherData.name}, ${countryName}</h3>
+            <p class="text-lg">Data real-time dari stasiun meteorologi</p>
         </div>
         
-        <div class="weather-grid">
-            <div class="weather-card">
-                <div class="weather-icon">${weatherIcon}</div>
-                <div class="weather-temp">${Math.round(
-                  weatherData.main.temp
-                )}°C</div>
-                <div class="weather-desc">${
-                  weatherData.weather[0].description
-                }</div>
-                <div class="weather-details">
-                    <div class="weather-detail">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white bg-opacity-10 p-7 rounded-xl text-center backdrop-blur-md border border-white border-opacity-20">
+                <div class="text-4xl mb-4">${weatherIcon}</div>
+                <div class="text-4xl font-bold my-4">${Math.round(weatherData.main.temp)}°C</div>
+                <div class="text-xl mb-5">${weatherData.weather[0].description}</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Terasa seperti:</span>
-                        <span>${Math.round(
-                          weatherData.main.feels_like
-                        )}°C</span>
+                        <span>${Math.round(weatherData.main.feels_like)}°C</span>
                     </div>
-                    <div class="weather-detail">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Kelembaban:</span>
                         <span>${weatherData.main.humidity}%</span>
                     </div>
-                    <div class="weather-detail">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Tekanan:</span>
                         <span>${weatherData.main.pressure} hPa</span>
                     </div>
-                    <div class="weather-detail">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Angin:</span>
                         <span>${weatherData.wind.speed} m/s</span>
                     </div>
                 </div>
             </div>
             
-            <div class="weather-card">
-                <div class="weather-icon">📊</div>
-                <h4>Detail Tambahan</h4>
-                <div class="weather-details">
-                    <div class="weather-detail">
+            <div class="bg-white bg-opacity-10 p-7 rounded-xl text-center backdrop-blur-md border border-white border-opacity-20">
+                <div class="text-4xl mb-4">📊</div>
+                <h4 class="text-xl mb-5">Detail Tambahan</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Suhu Min:</span>
                         <span>${Math.round(weatherData.main.temp_min)}°C</span>
                     </div>
-                    <div class="weather-detail">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Suhu Max:</span>
                         <span>${Math.round(weatherData.main.temp_max)}°C</span>
                     </div>
-                    <div class="weather-detail">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Visibilitas:</span>
-                        <span>${(weatherData.visibility / 1000).toFixed(
-                          1
-                        )} km</span>
+                        <span>${(weatherData.visibility / 1000).toFixed(1)} km</span>
                     </div>
-                    <div class="weather-detail">
+                    <div class="flex justify-between py-1.5 border-b border-white border-opacity-10">
                         <span>Awan:</span>
                         <span>${weatherData.clouds.all}%</span>
                     </div>
@@ -707,6 +714,7 @@ function displayWeatherInfo(weatherData, countryName, coordinates) {
     `;
 
   weatherSection.style.display = "block";
+  weatherSection.style.background = "linear-gradient(135deg, #667eea, #764ba2)";
 }
 
 // Predict season based on latitude and month
@@ -736,48 +744,54 @@ function displaySeasonPrediction(
       id: "spring",
       emoji: "🌸",
       desc: "Suhu sedang, bunga bermekaran",
+      gradient: "from-green-400 to-green-500",
     },
     {
       name: "Musim Panas",
       id: "summer",
       emoji: "☀️",
       desc: "Suhu panas, hari panjang",
+      gradient: "from-orange-400 to-orange-500",
     },
     {
       name: "Musim Gugur",
       id: "autumn",
       emoji: "🍂",
       desc: "Suhu sejuk, daun berguguran",
+      gradient: "from-red-500 to-orange-500",
     },
     {
       name: "Musim Dingin",
       id: "winter",
       emoji: "⛄",
       desc: "Suhu dingin, salju mungkin",
+      gradient: "from-blue-400 to-blue-600",
     },
   ];
 
   return `
-        <div class="season-prediction">
-            <div class="season-title">
-                <h4>🔮 Prediksi Musim di ${countryName}</h4>
+        <div class="season-prediction bg-white bg-opacity-10 p-7 rounded-xl mt-5 backdrop-blur-md">
+            <div class="season-title text-center mb-6">
+                <h4 class="text-2xl mb-3">🔮 Prediksi Musim di ${countryName}</h4>
                 <p>Berdasarkan lokasi geografis dan data historis</p>
             </div>
-            <div class="seasons-grid">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 ${seasons
                   .map(
                     (season) => `
-                    <div class="season-card ${season.id} ${
-                      currentSeason === season.id ? "current-season" : ""
-                    }">
-                        <div style="font-size: 2em;">${season.emoji}</div>
-                        <div>${season.name}</div>
-                        <div style="font-size: 0.8em; font-weight: normal; margin-top: 5px;">${
+                    <div class="season-card p-5 rounded-xl text-center text-white ${
+                      currentSeason === season.id 
+                        ? "transform scale-105 shadow-lg border-2 border-white" 
+                        : ""
+                    } bg-gradient-to-br ${season.gradient}">
+                        <div class="text-3xl mb-2">${season.emoji}</div>
+                        <div class="font-bold">${season.name}</div>
+                        <div class="text-xs font-normal mt-1 opacity-80">${
                           season.desc
                         }</div>
                         ${
                           currentSeason === season.id
-                            ? '<div style="margin-top: 5px;">⭐ Musim Saat Ini</div>'
+                            ? '<div class="mt-2 text-sm">⭐ Musim Saat Ini</div>'
                             : ""
                         }
                     </div>
@@ -856,10 +870,10 @@ function hideLoading() {
 
 function showError(message) {
   errorSection.innerHTML = `
-        <div style="text-align: center;">
-            <h3 style="color: #d32f2f; margin-bottom: 15px;">❌ Oops! Terjadi Kesalahan</h3>
-            <p style="margin-bottom: 10px; font-size: 1.1em;">${message}</p>
-            <p style="color: #666; font-size: 0.9em;">💡 Tips: Gunakan nama negara dalam bahasa Inggris (contoh: "indonesia", "japan")</p>
+        <div class="text-center">
+            <h3 class="text-red-700 text-xl mb-4">❌ Oops! Terjadi Kesalahan</h3>
+            <p class="mb-3 text-lg">${message}</p>
+            <p class="text-gray-500 text-sm">💡 Tips: Gunakan nama negara dalam bahasa Inggris (contoh: "indonesia", "japan")</p>
         </div>
     `;
   errorSection.style.display = "block";
