@@ -1,0 +1,37 @@
+[
+  {
+    "timestamp": "2025-10-30T19:16:27.027Z",
+    "userMessage": "Hello, how are you?",
+    "aiResponse": "Hello! I'm doing well, thank you for asking. How are you today?"
+  },
+  {
+    "timestamp": "2025-10-30T19:17:39.337Z",
+    "userMessage": "halo bro",
+    "aiResponse": "Halo bro! Ada yang bisa dibantu?",
+    "weatherContext": ""
+  },
+  {
+    "timestamp": "2025-10-30T19:26:41.388Z",
+    "userMessage": "halo",
+    "aiResponse": "Halo juga! Ada yang bisa saya bantu?",
+    "weatherContext": ""
+  },
+  {
+    "timestamp": "2025-10-30T19:28:21.407Z",
+    "userMessage": "halow brooww",
+    "aiResponse": "Wkwk, halo juga broow! Ada apaan nih? 😎",
+    "weatherContext": ""
+  },
+  {
+    "timestamp": "2025-10-30T19:28:46.523Z",
+    "userMessage": "mau curhat bisa ga?",
+    "aiResponse": "Tentu saja bisa! Silakan ceritakan saja apa yang ingin kamu bagi. Aku siap mendengarkan tanpa menghakimi dan akan berusaha memahami apa yang kamu rasakan.<br><br>Kamu bisa mulai kapan saja.",
+    "weatherContext": ""
+  },
+  {
+    "timestamp": "2025-10-30T19:36:03.163Z",
+    "userMessage": "ramalan cuaca besok di jakarta gimana?",
+    "aiResponse": "Halo, Jakartans! 👋 Santai, bro/sis! Aku bantu intip ramalan cuaca besok di Jakarta ya. Kelihatannya besok bakal <em>agak mendung</em> dan ada rintikan hujan tipis nih.<br><br>Berikut detailnya:<br><br><br><ul><br>    <li>☀️ <strong>Suhu:</strong> Besok suhu di Jakarta diprediksi sekitar <strong>25°C</strong>. Tapi, <em>rasanya bisa sedikit lebih hangat</em> lho, kayak <strong>26°C</strong>. Lumayan adem kan?</li><br>    <li>🌧️ <strong>Kondisi:</strong> Hati-hati ya, besok diperkirakan akan ada <strong>hujan rintik-rintik</strong>. Jadi, jangan lupa sedia payung atau jas hujan!</li><br>    <li>💧 <strong>Kelembaban:</strong> Kelembaban udara <em>cukup tinggi</em>, yaitu sekitar <strong>91%</strong>. Ini bisa bikin suasana terasa <em>agak gerah</em> atau lembap.</li><br>    <li>💨 <strong>Kecepatan Angin:</strong> Anginnya sepoi-sepoi aja kok, sekitar <strong>1.41 m/s</strong>. Nggak bakal ada angin kencang yang gimana-gimana.</li><br>    <li>👁️ <strong>Visibilitas:</strong> Jarak pandang <em>bagus banget</em>, mencapai <strong>10.0 km</strong>. Jadi, meski hujan rintik, pandangan tetap jelas.</li><br>    <li>🌡️ <strong>Tekanan:</strong> Tekanan udaranya sekitar <strong>1011 hPa</strong>.</li><br></ul><br><br><br>Kesimpulannya, besok di Jakarta cenderung <em>lembab</em> dan ada potensi <strong>hujan rintik-rintik</strong> dengan suhu yang cukup nyaman. Jangan lupa bawa perlengkapan hujanmu ya biar aktivitasmu lancar jaya! Tetap semangat! 💪",
+    "weatherContext": "Data Cuaca untuk jakarta, ID:\n- Suhu: 25°C (terasa seperti 26°C)\n- Kondisi: hujan rintik-rintik\n- Kelembaban: 91%\n- Tekanan: 1011 hPa\n- Kecepatan angin: 1.41 m/s\n- Visibilitas: 10.0 km"
+  }
+]

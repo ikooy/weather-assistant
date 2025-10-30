@@ -7,6 +7,9 @@ let countryInputEl, searchBtnEl, resultSectionEl, weatherSectionEl, loadingEleme
 // DOM Elements untuk CHAT (dari chat-ai.html)
 let chatMessages, chatInput, sendBtn, typingIndicator;
 
+// Variables to store last chat widget position
+// (Removed since the new widget has fixed positioning)
+
 // Conversation history (dari chat-ai.html)
 let conversationHistory = [
   {
@@ -20,90 +23,186 @@ let conversationHistory = [
   },
 ];
 
+
+
 // ==================== FLOATING CHAT WIDGET FUNCTIONS ====================
 
 function initChatWidget() {
   const chatWidget = document.getElementById("chatWidget");
   const chatToggle = document.getElementById("chatToggle");
-  const minimizeBtn = document.getElementById("minimizeChat");
   const closeBtn = document.getElementById("closeChat");
+  const minimizeBtn = document.getElementById("minimizeChat");
+  const chatWidgetHeader = chatWidget.querySelector(".chat-widget-header");
 
   // Show chat widget
   chatToggle.addEventListener("click", () => {
-    chatWidget.classList.remove("h-[60px]");
-    chatWidget.classList.add("h-[500px]");
-    chatToggle.style.display = "none";
+    chatWidget.classList.remove("hidden"); // Make the chat widget visible
+    chatToggle.style.display = "none"; // Hide the toggle button
+
     // Focus ke input ketika widget dibuka
     setTimeout(() => {
       if (chatInput) chatInput.focus();
     }, 100);
   });
 
-  // Minimize chat widget
-  minimizeBtn.addEventListener("click", () => {
-    chatWidget.classList.toggle("minimized");
-    if (chatWidget.classList.contains("minimized")) {
-      chatWidget.classList.remove("h-[500px]");
-      chatWidget.classList.add("h-[60px]");
-      chatWidget.style.overflow = "hidden";
-    } else {
-      chatWidget.classList.add("h-[500px]");
-      chatWidget.classList.remove("h-15");
-      chatWidget.style.overflow = "visible";
-    }
-    chatToggle.style.display = "block";
-  });
-
   // Close chat widget
   closeBtn.addEventListener("click", () => {
-    chatWidget.classList.add("hidden");
-    chatToggle.style.display = "block";
+    chatWidget.classList.add("hidden"); // Hide the chat widget completely
+    chatToggle.style.display = "block"; // Show the toggle button again
   });
 
-  // Make chat widget draggable
-  makeDraggable(chatWidget);
+  // Minimize chat widget (for now just hide it, can be expanded later)
+  if(minimizeBtn) {
+    minimizeBtn.addEventListener("click", () => {
+      chatWidget.classList.toggle("minimized");
+    });
+  }
+
+  // Close chat widget when clicking outside if it's open
+  document.addEventListener("click", (event) => {
+    if (!chatWidget.contains(event.target) && 
+        !chatToggle.contains(event.target) &&
+        chatWidget.classList.contains("hidden") === false) {
+      // Don't close if clicking on other interactive elements
+    }
+  });
+
+  // Add event listeners for quick action buttons
+  const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+  quickActionBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const action = this.getAttribute('data-action');
+      handleQuickAction(action);
+    });
+  });
 }
 
-// Draggable functionality
-function makeDraggable(element) {
-  let pos1 = 0,
-    pos2 = 0,
-    pos3 = 0,
-    pos4 = 0;
-  const header = element.querySelector(".chat-widget-header");
-
-  header.onmousedown = dragMouseDown;
-
-  function dragMouseDown(e) {
-    e.preventDefault();
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    document.onmousemove = elementDrag;
-  }
-
-  function elementDrag(e) {
-    e.preventDefault();
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-
-    element.style.top = element.offsetTop - pos2 + "px";
-    element.style.right = "auto";
-    element.style.left = element.offsetLeft - pos1 + "px";
-    element.style.bottom = "auto";
-  }
-
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
+// Handle quick weather actions
+function handleQuickAction(action) {
+  switch(action) {
+    case 'today-weather':
+      addMessage("Bagaimana cuaca hari ini di kota Anda?", true);
+      setTimeout(() => {
+        showTyping();
+        setTimeout(() => {
+          hideTyping();
+          addMessage("Untuk mengetahui cuaca hari ini, silakan sebutkan nama kota yang ingin Anda ketahui cuacanya! 🌤️ Misalnya: Jakarta, Bali, atau kota lainnya.");
+        }, 1500);
+      }, 500);
+      break;
+    case 'forecast':
+      addMessage("Ramalan cuaca", true);
+      setTimeout(() => {
+        showTyping();
+        setTimeout(() => {
+          hideTyping();
+          addMessage("Saya dapat membantu Anda dengan ramalan cuaca! Silakan sebutkan nama kota yang ingin Anda ketahui ramalan cuacanya. 📅 Saya bisa memberikan informasi cuaca untuk beberapa hari ke depan.");
+        }, 1500);
+      }, 500);
+      break;
+    default:
+      break;
   }
 }
 
 // ==================== CHAT FUNCTIONS (dari chat-ai.html) ====================
 
+
+
+const CHAT_HISTORY_KEY = 'weatherAssistantChatHistory';
+
+
+
+// Function to save chat history to localStorage
+
+function saveChatHistory() {
+
+  try {
+
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(conversationHistory));
+
+  } catch (e) {
+
+    console.error("Error saving chat history to localStorage:", e);
+
+  }
+
+}
+
+
+
+// Function to load chat history from localStorage
+
+function loadChatHistory() {
+
+  try {
+
+    const storedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
+
+    if (storedHistory) {
+
+      const parsedHistory = JSON.parse(storedHistory);
+
+      // Replace initial conversationHistory with loaded one
+
+      conversationHistory = parsedHistory;
+
+      // Display loaded messages
+
+      chatMessages.innerHTML = ''; // Clear initial messages
+
+      conversationHistory.forEach(msg => {
+
+        if (msg.role !== "system") { // Don't display system message
+
+          // Use a temporary flag to prevent re-saving during load
+
+          addMessage(msg.content, msg.role === "user", true);
+
+        }
+
+      });
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    }
+
+  } catch (e) {
+
+    console.error("Error loading chat history from localStorage:", e);
+
+    // If loading fails, reset to initial conversationHistory
+
+    conversationHistory = [
+
+      {
+
+        role: "system",
+
+        content: "Kamu adalah asisten AI cuaca yang ramah dan informatif",
+
+      },
+
+      {
+
+        role: "assistant",
+
+        content:
+
+          "Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!",
+
+      },
+
+    ];
+
+  }
+
+}
+
+
+
 function initChatFunctionality() {
+
   chatMessages = document.getElementById("chatMessages");
   chatInput = document.getElementById("chatInput");
   sendBtn = document.getElementById("sendBtn");
@@ -114,8 +213,12 @@ function initChatFunctionality() {
     return;
   }
 
+  // Load chat history from backend API when chat functionality initializes
+  loadChatHistoryFromAPI();
+
   // Event listeners untuk chat
   sendBtn.addEventListener("click", handleSendMessage);
+  
   chatInput.addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
       handleSendMessage();
@@ -124,36 +227,103 @@ function initChatFunctionality() {
 
   // Initial focus on input
   chatInput.focus();
+
+}
+
+
+
+// Function to load chat history from backend API
+async function loadChatHistoryFromAPI() {
+  console.log("🔍 Loading chat history from backend API...");
+  try {
+    const response = await fetch(`${BACKEND_API_URL}/api/chat-history`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch chat history: ${response.status} ${response.statusText}`);
+    }
+    const history = await response.json();
+    console.log(`✅ Loaded ${history.length} chat conversations from backend`);
+    
+    if (Array.isArray(history) && history.length > 0) {
+      // Clear the chat messages container
+      chatMessages.innerHTML = '';
+      
+      // Add initial AI message
+      const initialMessage = document.createElement("div");
+      initialMessage.className = "message ai-message";
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      initialMessage.innerHTML = `
+        <div class="message-content">Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!</div>
+        <span class="timestamp">${timestamp}</span>
+      `;
+      chatMessages.appendChild(initialMessage);
+      
+      // Add previous conversations from API
+      history.forEach(chat => {
+        addMessage(chat.userMessage, true, true); // Add user message
+        addMessage(chat.aiResponse, false, true); // Add AI response
+      });
+    } else {
+      console.log("No previous chat history found, showing initial message");
+      // Show initial message if no history
+      chatMessages.innerHTML = '';
+      const initialMessage = document.createElement("div");
+      initialMessage.className = "message ai-message";
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      initialMessage.innerHTML = `
+        <div class="message-content">Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!</div>
+        <span class="timestamp">${timestamp}</span>
+      `;
+      chatMessages.appendChild(initialMessage);
+    }
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  } catch (error) {
+    console.error("❌ Error loading chat history from API:", error);
+    // Fallback to initial message if API loading fails
+    chatMessages.innerHTML = '';
+    const initialMessage = document.createElement("div");
+    initialMessage.className = "message ai-message";
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    initialMessage.innerHTML = `
+      <div class="message-content">Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!</div>
+      <span class="timestamp">${timestamp}</span>
+    `;
+    chatMessages.appendChild(initialMessage);
+  }
 }
 
 // Fungsi 1: Tambah message ke chat
-function addMessage(text, isUser = false) {
+function addMessage(text, isUser = false, isLoading = false) { // Added isLoading flag
   if (!chatMessages) {
     console.error("chatMessages element not found");
     return;
   }
 
-  const messageDiv = document.createElement("div");
-  messageDiv.className = `message ${isUser ?
-    "self-end bg-primary text-white p-4 py-3.5 rounded-xl rounded-bl-md" :
-    "self-start bg-white text-gray-700 p-4 py-3.5 rounded-xl rounded-br-md border border-gray-200"}`;
-
-  // Check if text contains weather info to format it specially
-  if (text.includes("Suhu:") && text.includes("Kondisi:")) {
-    // Format as weather info
-    messageDiv.innerHTML = `<div>${text.split("Data Cuaca")[0]
-      }<br><div class="weather-info">${text.split("Data Cuaca:")[1] || text
-      }</div></div>`;
-  } else {
-    // Use innerHTML to render HTML formatting (bold, italic, etc.)
-    messageDiv.innerHTML = text;
+  const messageElement = document.createElement("div");
+  messageElement.className = `message ${isUser ? "user-message" : "ai-message"}`;
+  
+  // Check if this is a weather-related message to apply special formatting
+  let formattedText = text;
+  if (!isUser) {
+    // Format weather-specific information
+    formattedText = formatWeatherMessage(text);
   }
+  
+  // Create message content with timestamp
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  messageElement.innerHTML = `
+    <div class="message-content">${formattedText}</div>
+    <span class="timestamp">${timestamp}</span>
+  `;
 
-  chatMessages.appendChild(messageDiv);
+  chatMessages.appendChild(messageElement);
 
-  // Add to conversation history
-  const role = isUser ? "user" : "assistant";
-  conversationHistory.push({ role: role, content: text });
+  // Only add to conversation history and save if not loading from history
+  if (!isLoading) {
+    const role = isUser ? "user" : "assistant";
+    conversationHistory.push({ role: role, content: text });
+    saveChatHistory(); // Save history after each new message
+  }
 
   // Keep conversation history to a reasonable size (last 10 messages + system message)
   if (conversationHistory.length > 11) {
@@ -163,7 +333,51 @@ function addMessage(text, isUser = false) {
     ];
   }
 
+  // Scroll to bottom
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Add animation effect
+  setTimeout(() => {
+    messageElement.style.opacity = '1';
+    messageElement.style.transform = 'translateY(0)';
+  }, 20);
+}
+
+// Function to format weather-specific messages with enhanced styling
+function formatWeatherMessage(text) {
+  // Check if the message contains weather information
+  if (text.toLowerCase().includes("suhu") || 
+      text.toLowerCase().includes("temperature") || 
+      text.toLowerCase().includes("weather") ||
+      text.toLowerCase().includes("cuaca") ||
+      text.toLowerCase().includes("humidity") ||
+      text.toLowerCase().includes("kelembaban") ||
+      text.toLowerCase().includes("pressure") ||
+      text.toLowerCase().includes("tekanan") ||
+      text.toLowerCase().includes("wind") ||
+      text.toLowerCase().includes("angin")) {
+    
+    // Extract weather data and create enhanced display
+    let enhancedText = text;
+    
+    // Look for temperature patterns and highlight them
+    enhancedText = enhancedText.replace(/(\d+)°C/g, '<strong style="color: #1976d2;">$1°C</strong>');
+    enhancedText = enhancedText.replace(/(\d+)°F/g, '<strong style="color: #1976d2;">$1°F</strong>');
+    
+    // Highlight humidity, pressure, and wind values
+    enhancedText = enhancedText.replace(/(humidity|kelembaban):?\s*(\d+)%/gi, '$1: <strong style="color: #0288d1;">$2%</strong>');
+    enhancedText = enhancedText.replace(/(pressure|tekanan):?\s*(\d+)\s*(hpa|mb)/gi, '$1: <strong style="color: #388e3c;">$2 $3</strong>');
+    enhancedText = enhancedText.replace(/(wind|angin):?\s*(\d+)\s*(m\/s|km\/h|mph)/gi, '$1: <strong style="color: #f57c00;">$2 $3</strong>');
+    
+    // Add weather-specific styling if it contains weather data
+    if (enhancedText !== text) {
+      enhancedText = `<div class="weather-info">${enhancedText}</div>`;
+    }
+    
+    return enhancedText;
+  }
+  
+  return text;
 }
 
 // Fungsi 2: Ambil data cuaca dari OpenWeatherMap (via backend)
@@ -301,9 +515,45 @@ function extractCityName(message) {
   return null;
 }
 
-// Fungsi 5: Kirim ke Gemini AI (via backend)
+// Fungsi 5: Kirim ke Gemini AI (via backend) - Enhanced
 async function sendToGemini(message, weatherContext = "") {
+  console.log("🔍 Sending message to Gemini API:", message.substring(0, 50) + "...");
   try {
+    // Enhance the weather context to make responses more interactive and fun
+    let enhancedWeatherContext = weatherContext;
+    if (weatherContext) {
+      // Add more engaging descriptions based on weather data
+      try {
+        const weatherData = JSON.parse(weatherContext.replace(/Data Cuaca untuk .*, .*\n/, ''));
+        if (weatherData) {
+          const temp = weatherData.main?.temp;
+          const description = weatherData.weather?.[0]?.description;
+          const humidity = weatherData.main?.humidity;
+          
+          // Create more engaging weather descriptions
+          let funDescription = "";
+          if (temp > 30) {
+            funDescription = " 🌶️ Wah, panas banget nih! Siap-siap deh, jangan lupa bawa topi dan minum banyak air!";
+          } else if (temp < 18) {
+            funDescription = " ❄️ Wah, dingin nich! Jangan lupa bawa jaket ya!";
+          }
+          
+          if (description && description.includes("rain")) {
+            funDescription += " \n 🌧️ Hujan nih, bawa payung atau jas hujan ya!";
+          } else if (description && description.includes("cloud")) {
+            funDescription += " \n ☁️ Cerah berawan, cuaca nyaman buat jalan-jalan!";
+          } else if (description && description.includes("clear")) {
+            funDescription += " \n ☀️ Cuaca cerah, sempurna buat aktivitas di luar ruangan!";
+          }
+          
+          enhancedWeatherContext = `${weatherContext}\n${funDescription}`;
+        }
+      } catch (e) {
+        // If parsing fails, continue with original weather context
+        console.log("Could not parse weather data for enhanced context");
+      }
+    }
+
     // Try the /api/chat endpoint first (as specified in requirements)
     const response = await fetch(`${BACKEND_API_URL}/api/chat`, {
       method: "POST",
@@ -312,7 +562,7 @@ async function sendToGemini(message, weatherContext = "") {
       },
       body: JSON.stringify({
         message: message,
-        weatherContext: weatherContext,
+        weatherContext: enhancedWeatherContext,
         // Include conversation history as specified in requirements
         messages: conversationHistory
       }),
@@ -333,6 +583,7 @@ async function sendToGemini(message, weatherContext = "") {
     const data = await response.json();
 
     if (data.text) {
+      console.log("✅ Gemini API response received successfully");
       return data.text;
     } else if (data.success === false) {
       throw new Error(data.error || "Respons dari API tidak sesuai format yang diharapkan");
@@ -370,6 +621,7 @@ async function sendToGemini(message, weatherContext = "") {
       const data = await response.json();
 
       if (data.text) {
+        console.log("✅ Gemini fallback API response received successfully");
         return data.text;
       } else {
         console.error("Unexpected API response:", data);
@@ -412,6 +664,8 @@ async function getWeatherForAI(message) {
 
 // Handle sending a message
 async function handleSendMessage() {
+  console.log("🔍 handleSendMessage called");
+  
   if (!chatInput || !chatMessages) {
     console.error("DOM elements not available");
     addMessage("Terjadi kesalahan: elemen chat tidak ditemukan", false);
@@ -429,6 +683,7 @@ async function handleSendMessage() {
   // Add user message to chat
   addMessage(message, true);
   chatInput.value = "";
+  chatInput.focus(); // Keep focus on input after sending
 
   // Show typing indicator
   showTyping();
@@ -488,13 +743,23 @@ async function handleSendMessage() {
     }
   } finally {
     hideTyping();
+    console.log("✅ Message processing completed");
   }
 }
 
 // Show typing indicator
 function showTyping() {
   if (typingIndicator) {
-    typingIndicator.style.display = "block";
+    typingIndicator.classList.add("active");
+    // Add dots to typing indicator
+    typingIndicator.innerHTML = `
+      <span>AI sedang mengetik</span>
+      <div class="typing-indicator-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    `;
   }
   if (chatMessages) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -504,7 +769,7 @@ function showTyping() {
 // Hide typing indicator
 function hideTyping() {
   if (typingIndicator) {
-    typingIndicator.style.display = "none";
+    typingIndicator.classList.remove("active");
   }
 }
 

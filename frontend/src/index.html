@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="./css/style.css">
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Custom Tailwind config for CSS variables -->
     <script>
         tailwind.config = {
@@ -58,7 +59,9 @@
         <header class="bg-gradient-to-br from-primary to-secondary text-white py-10 text-center relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 bottom-0 bg-[linear-gradient(45deg,transparent_49%,rgba(255,255,255,0.1)_50%,transparent_51%),linear-gradient(-45deg,transparent_49%,rgba(255,255,255,0.1)_50%,transparent_51%)] bg-[length:20px_20px] opacity-30"></div>
             <div class="relative z-20">
-                <h1 class="text-5xl mb-4 text-shadow bg-gradient-to-r from-white to-cyan-100 bg-clip-text text-transparent">🌍 World Explorer</h1>
+                <h1 class="text-5xl mb-4 text-shadow bg-gradient-to-r from-white to-cyan-100 bg-clip-text text-transparent">
+                    <i class="fa-solid fa-globe" width="40" height="40"></i>
+                    World Explorer</h1>
                 <p class="text-xl mb-4 opacity-90 font-light">Informasi Negara & Prediksi Cuaca - Cloud Computing UTS</p>
                 <p class="opacity-80 bg-white bg-opacity-20 py-3 px-5 rounded-full inline-block backdrop-blur-sm">Kelompok: Cloud Innovators | NIM: 202501001, 202501002, 202501003</p>
             </div>
@@ -137,33 +140,39 @@
         </footer>
     </div>
 
-    <!-- Floating Chat Widget -->
-    <div id="chatWidget" class="chat-widget fixed bottom-5 right-5 w-96 h-[500px] bg-white rounded-xl shadow-2xl z-50 transition-all duration-300 border-2 border-primary hidden" style="display: none;">
-        <div class="chat-widget-header bg-gradient-to-br from-primary to-secondary text-white p-4 rounded-t-xl flex justify-between items-center cursor-move">
+        <!-- Floating Chat Widget -->
+    <div id="chatWidget" class="chat-widget hidden">
+        <div class="chat-widget-header">
             <span>🤖 AI Cuaca Assistant</span>
-            <div class="chat-widget-controls flex">
-                <button id="minimizeChat" class="bg-none border-0 text-white text-lg cursor-pointer ml-3 w-6 h-6 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-20">−</button>
-                <button id="closeChat" class="bg-none border-0 text-white text-lg cursor-pointer ml-3 w-6 h-6 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-20">×</button>
+            <div class="chat-widget-controls ">
+                <button id="minimizeChat">−</button>
+                <button id="closeChat">×</button>
             </div>
         </div>
-        <div class="chat-widget-body flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-50">
-            <div class="chat-messages flex-1 overflow-y-auto flex flex-col gap-3" id="chatMessages">
-                <div class="message ai-message bg-white text-gray-700 self-start rounded-xl p-4 py-3.5 border border-gray-200 rounded-bl-md">
+        <div class="chat-widget-body">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
                     Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!
                 </div>
             </div>
-            <div class="typing-indicator p-4 bg-gray-100 rounded-xl italic self-start rounded-bl-md" id="typingIndicator" style="display: none;">
+            <div class="typing-indicator" id="typingIndicator">
                 AI sedang mengetik...
             </div>
         </div>
-        <div class="chat-widget-input p-4 border-t border-gray-200 bg-white rounded-b-xl flex gap-3">
-            <input type="text" id="chatInput" placeholder="Tanyakan tentang cuaca di negara tertentu..." class="flex-1 p-3 border-2 border-gray-300 rounded-full focus:outline-none focus:border-primary" autocomplete="off">
-            <button id="sendBtn" class="p-3 bg-primary text-white border-0 rounded-full cursor-pointer transition-colors duration-300 hover:bg-indigo-600">Kirim</button>
+        <div class="chat-widget-input">
+            <input type="text" id="chatInput" placeholder="Tanyakan tentang cuaca di negara tertentu..."
+                autocomplete="off">
+            <button id="sendBtn"></button>
+        </div>
+        <!-- Quick Weather Actions -->
+        <div class="quick-actions" style="display: flex; padding: 0 16px 10px; gap: 8px;">
+            <button class="quick-action-btn" data-action="today-weather">🌤️ Cuaca Hari Ini</button>
+            <button class="quick-action-btn" data-action="forecast">🔮 Ramalan</button>
         </div>
     </div>
 
     <!-- Floating Chat Toggle Button -->
-    <button id="chatToggle" class="chat-toggle-btn fixed bottom-5 right-5 bg-gradient-to-br from-primary to-secondary text-white px-5 py-4 rounded-full cursor-pointer shadow-2xl z-40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] font-bold">
+    <button id="chatToggle" class="chat-toggle-btn">
         🤖 Chat Cuaca
     </button>
 

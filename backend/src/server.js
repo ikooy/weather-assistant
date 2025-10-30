@@ -286,6 +286,17 @@ ${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ''}`;
       cleanResponse = listContent;
     }
     
+    // Save chat history to file
+    const chatHistory = {
+      timestamp: new Date().toISOString(),
+      userMessage: userMessage,
+      aiResponse: cleanResponse,
+      weatherContext: weatherContext
+    };
+    
+    // Store chat history
+    await saveChatHistory(chatHistory);
+    
     console.log("✅ Chat API request completed successfully");
     res.json({ 
       text: cleanResponse, 
@@ -303,6 +314,80 @@ ${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ''}`;
       success: false
     });
   }
+});
+
+// Function to save chat history to file
+const fs = require('fs');
+const chatHistoryPath = path.join(__dirname, 'chat_history.json');
+
+// Function to initialize chat history file if it doesn't exist
+function initializeChatHistoryFile() {
+  if (!fs.existsSync(chatHistoryPath)) {
+    fs.writeFileSync(chatHistoryPath, JSON.stringify([], null, 2));
+    console.log('✅ Created new chat_history.json file');
+  }
+}
+
+// Initialize chat history file on startup
+initializeChatHistoryFile();
+
+// Function to save chat history to file
+async function saveChatHistory(chatData) {
+  try {
+    let existingHistory = [];
+    
+    // Read existing history
+    if (fs.existsSync(chatHistoryPath)) {
+      const data = fs.readFileSync(chatHistoryPath, 'utf8');
+      existingHistory = JSON.parse(data);
+    }
+    
+    // Add new chat data
+    existingHistory.push(chatData);
+    
+    // Keep only the last 100 conversations to prevent the file from growing too large
+    if (existingHistory.length > 100) {
+      existingHistory = existingHistory.slice(-100);
+    }
+    
+    // Write updated history back to file
+    fs.writeFileSync(chatHistoryPath, JSON.stringify(existingHistory, null, 2));
+    console.log('✅ Chat history saved to file, total conversations:', existingHistory.length);
+  } catch (error) {
+    console.error('❌ Error saving chat history:', error.message);
+  }
+}
+
+// Endpoint to get chat history
+app.get("/api/chat-history", (req, res) => {
+  console.log('🔍 Received request for chat history');
+  try {
+    if (!fs.existsSync(chatHistoryPath)) {
+      console.log('⚠️ Chat history file does not exist, returning empty array');
+      return res.json([]);
+    }
+    
+    const data = fs.readFileSync(chatHistoryPath, 'utf8');
+    const history = JSON.parse(data);
+    console.log('✅ Returning chat history, total conversations:', history.length);
+    res.json(history);
+  } catch (error) {
+    console.error('❌ Error reading chat history:', error.message);
+    res.status(500).json({ error: "Failed to read chat history", details: error.message });
+  }
+});
+
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "healthy", 
+    timestamp: new Date().toISOString(),
+    services: {
+      gemini: !!process.env.GEMINI_API_KEY,
+      weather: !!process.env.WEATHER_API_KEY,
+      port: process.env.PORT || 3000
+    }
+  });
 });
 
 // Country API endpoint (proxy to REST Countries API)
