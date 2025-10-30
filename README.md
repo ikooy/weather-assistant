@@ -45,21 +45,23 @@ cd PROJECT WEBSITE API
 npm install
 ```
 
-4. Buat file `.env` di root direktori dan isi dengan API keys berikut:
+4. Buat file `.env` di direktori `backend/src/` dan isi dengan API keys Anda sendiri:
 ```env
-# Weather API
-WEATHER_API_KEY=9f5da2646c399356922ecd13e8493f0b
+# Weather API Key (from https://openweathermap.org/api)
+WEATHER_API_KEY=your_openweather_api_key_here
 
-# Google Gemini API
-GEMINI_API_KEY=AIzaSyAv7EhBNHVi3JtASjeraQ0vWZmRbVomnNM
+# Gemini API Key (from https://makersuite.google.com/app/apikey)
+GEMINI_API_KEY=your_gemini_api_key_here
 
-# Backend API URL
-BACKEND_API_URL=http://localhost:3000
+# Port (optional, defaults to 3000)
+PORT=3000
 ```
 
-> **Catatan**: Ganti API keys di atas dengan keys Anda sendiri dari:
-> - [OpenWeatherMap](https://openweathermap.org/api) untuk `WEATHER_API_KEY`
-> - [Google AI Studio](https://makersuite.google.com/app/apikey) untuk `GEMINI_API_KEY`
+> **Catatan Penting**: 
+> - Ganti `your_openweather_api_key_here` dengan API key dari OpenWeatherMap
+> - Ganti `your_gemini_api_key_here` dengan API key dari Google AI Studio
+> - Jangan gunakan API key dari contoh karena tidak akan berfungsi
+> - API key hanya valid setelah Anda mendaftar dan menyetujui ketentuan layanan dari masing-masing platform
 
 5. Jalankan server:
 ```bash
@@ -72,7 +74,6 @@ node server.js
 
 6. Buka browser dan akses:
    - Utama: [http://localhost:3000](http://localhost:3000)
-   - Chat AI: [http://localhost:3000/chat](http://localhost:3000/chat)
 
 ## 🎯 Cara Penggunaan
 
@@ -83,13 +84,14 @@ node server.js
 4. Tunggu hingga data negara dan cuaca ditampilkan
 
 ### Menggunakan Chat AI Cuaca
-1. Buka [http://localhost:3000/chat](http://localhost:3000/chat)
-2. Ketik pertanyaan tentang cuaca, contoh:
+1. Chat AI terintegrasi di halaman utama sebagai widget mengambang
+2. Klik ikon chat di pojok kanan bawah
+3. Ketik pertanyaan tentang cuaca, contoh:
    - "Bagaimana cuaca di Jakarta?"
    - "Weather in Tokyo"
    - "Suhu di London sekarang berapa?"
-3. Tekan Enter atau klik tombol "Kirim"
-4. AI akan memberikan informasi cuaca dan jawaban berdasarkan konteks
+4. Tekan Enter atau klik tombol "Kirim"
+5. AI akan memberikan informasi cuaca dan jawaban berdasarkan konteks
 
 ## 🏗️ Struktur Proyek
 

@@ -26,17 +26,24 @@ npm install
 ```
 
 ### 4. Konfigurasi Lingkungan (Environment)
-- Buat file `.env` di direktori `backend/src/` berdasarkan file `.env copy`
-- Tambahkan API key Anda untuk:
-  - Weather API (OpenWeatherMap)
-  - Google Generative AI (Gemini)
+- Buat file `.env` di direktori `backend/src/` 
+- Dapatkan API key dari layanan eksternal:
+  - OpenWeatherMap: Kunjungi https://openweathermap.org/api untuk mendapatkan API key
+  - Google AI Studio: Kunjungi https://makersuite.google.com/app/apikey untuk mendapatkan API key Gemini
+- Tambahkan API key Anda ke file `.env`:
 
 Contoh konten file `.env`:
 ```
-WEATHER_API_KEY=your_openweathermap_api_key
-GEMINI_API_KEY=your_gemini_api_key
+WEATHER_API_KEY=your_actual_openweather_api_key_here
+GEMINI_API_KEY=your_actual_gemini_api_key_here
 PORT=3000
 ```
+
+**Catatan Penting:**
+- Ganti `your_actual_openweather_api_key_here` dengan API key dari OpenWeatherMap
+- Ganti `your_actual_gemini_api_key_here` dengan API key dari Google AI Studio
+- Jangan gunakan API key dari contoh dokumentasi karena tidak akan berfungsi
+- Pastikan API key aktif dan memiliki akses ke layanan yang relevan
 
 ### 5. Jalankan Aplikasi
 ```bash
@@ -109,6 +116,7 @@ weather-assistant/
 - Pastikan port 3000 tidak digunakan oleh aplikasi lain
 - Pastikan API key untuk OpenWeatherMap dan Gemini telah dikonfigurasi dengan benar
 - Jika terjadi kesalahan CORS, pastikan konfigurasi CORS di `server.js` berfungsi dengan baik
+- **Masalah Gemini AI (503 Service Unavailable):** Jika Anda mendapatkan pesan kesalahan "503 Service Unavailable" atau "The model is overloaded" saat berinteraksi dengan AI Chat, ini menunjukkan bahwa layanan Google Gemini AI sedang sibuk atau mengalami beban tinggi. Ini adalah masalah eksternal dan bukan kesalahan konfigurasi pada proyek Anda. Silakan coba lagi setelah beberapa waktu.
 
 ## Konfigurasi Lingkungan
 

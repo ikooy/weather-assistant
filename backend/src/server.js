@@ -3,7 +3,14 @@ const path = require("path");
 const cors = require("cors");
 const axios = require("axios");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-require("dotenv").config();
+
+// Load environment variables from .env file
+require("dotenv").config({ path: path.join(__dirname, '.env') });
+
+// Verify that environment variables are properly loaded
+console.log('🔍 Checking environment variables...');
+console.log('WEATHER_API_KEY exists:', !!process.env.WEATHER_API_KEY && process.env.WEATHER_API_KEY !== 'YOUR_OPENWEATHER_API_KEY_HERE');
+console.log('GEMINI_API_KEY exists:', !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,19 +37,24 @@ app.get("/api/weather/:city", async (req, res) => {
       });
     }
 
+    console.log(`🔍 Attempting to fetch weather data for city: ${city}`);
     const response = await axios.get(
       `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=id`
     );
 
+    console.log(`✅ Weather API call success: ${city}`);
     res.json(response.data);
   } catch (error) {
     console.error(
-      "Error calling Weather API:",
+      "⚠️ Weather API error:",
       error.response?.data || error.message
     );
     res
-      .status(500)
-      .json({ error: "Failed to get weather data", details: error.message });
+      .status(error.response?.status || 500)
+      .json({ 
+        error: "Failed to get weather data", 
+        details: error.response?.data?.message || error.message 
+      });
   }
 });
 
@@ -62,6 +74,7 @@ app.post("/api/gemini", async (req, res) => {
       });
     }
 
+    console.log(`🤖 Received Gemini API request: ${message.substring(0, 50)}...`);
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     
     // Prepare system instruction and user prompt
@@ -148,16 +161,168 @@ ${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ''}`;
       cleanResponse = listContent;
     }
     
+    console.log("✅ Gemini API request completed successfully");
     res.json({ text: cleanResponse, model: "gemini-2.5-flash" });
   } catch (error) {
     console.error(
       "❌ Error calling Gemini API:",
-      error.response?.data || error.message
+      error.message
     );
     res.status(500).json({
       error: "Failed to get response from AI service",
       details: error.message,
     });
+  }
+});
+
+// 🤖 Chat endpoint (for compatibility with frontend expectations)
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { message, weatherContext, messages } = req.body;
+    
+    // Extract the last user message if messages array is provided
+    let userMessage = message;
+    if (!userMessage && messages && messages.length > 0) {
+      const lastUserMessage = messages.slice().reverse().find(m => m.role === 'user');
+      userMessage = lastUserMessage ? lastUserMessage.content : '';
+    }
+    
+    if (!userMessage) return res.status(400).json({ error: "Message is required" });
+
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    
+    if (!GEMINI_API_KEY) {
+      console.error("❌ Gemini API key is not configured in environment variables");
+      return res.status(500).json({ 
+        error: "Gemini API key not configured", 
+        details: "Please set GEMINI_API_KEY in your environment variables" 
+      });
+    }
+
+    console.log(`💬 Received chat API request: ${userMessage.substring(0, 50)}...`);
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    
+    // Prepare system instruction and user prompt
+    let systemInstruction = "";
+    let finalPrompt = userMessage;
+
+    if (weatherContext) {
+      systemInstruction = `Kamu adalah asisten AI cuaca yang berperan menjelaskan informasi cuaca harian secara menarik, rapi, dan profesional.
+
+Tugasmu:
+- Gunakan gaya bahasa santai, friendly, dan mudah dipahami.
+- Format jawaban agar rapi dengan format HTML berikut:
+  - Gunakan **bold** untuk istilah penting atau highlight data utama (contoh: **Suhu: 26°C**).
+  - Gunakan *italic* bila ingin menekankan kata tertentu (contoh: *agak gerah*).
+  - Gunakan bullet point untuk data-data spesifik (contoh: "* **Suhu:** 25°C")
+  - Pisahkan penjelasan menjadi paragraf pendek agar enak dibaca (gunakan \\n untuk baris baru).
+  - Gunakan <strong>, <em>, <br>, dan <ul>/<li> untuk format yang akan dirender di browser.
+- Tambahkan kontek dari data cuaca jika ada.
+- Gunakan emoji ringan dan relevan (tanpa berlebihan) — misal ☀️🌧️💨🔥❄️.
+- Gunakan bahasa Indonesia yang gaul tapi sopan, mirip gaya asisten AI friendly (contoh: "Santai, bro! Nih aku bantu...").
+- Akhiri dengan saran atau kesimpulan singkat kalau konteksnya memungkinkan.
+- Jaga supaya tetap faktual berdasarkan data cuaca, tapi bisa memberi sedikit interpretasi ringan (contoh: "kelihatannya bakal mendung lagi nih, bro").
+- Jangan menjawab hal di luar topik cuaca atau permintaan pengguna.`;
+      finalPrompt = `Pertanyaan pengguna: "${userMessage}"
+${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ''}`;
+    }
+
+    // Create model with system instruction if available
+    let model;
+    if (systemInstruction) {
+      model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash",
+        systemInstruction: systemInstruction
+      });
+    } else {
+      model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    }
+
+    const result = await model.generateContent(finalPrompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Format the response to use HTML tags for styling
+    let cleanResponse = text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")  // Convert **text** to <strong>text</strong>
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")              // Convert *text* to <em>text</em>
+      .replace(/\n\n/g, "<br><br>")                      // Convert double newlines to paragraph breaks
+      .replace(/\n/g, "<br>");                           // Convert single newlines to <br> tags
+    
+    // Convert bullet points to HTML list format if they exist
+    if (cleanResponse.includes("* ")) {
+      // Convert to unordered list
+      const lines = cleanResponse.split("<br>");
+      let inList = false;
+      let listContent = "";
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().startsWith("* ")) {
+          if (!inList) {
+            listContent += "<ul>";
+            inList = true;
+          }
+          const listItem = line.replace(/^\* /, "");
+          listContent += `<li>${listItem}</li>`;
+        } else {
+          if (inList) {
+            listContent += "</ul>";
+            inList = false;
+          }
+          listContent += line;
+        }
+        
+        // Add line break if not the last line
+        if (i < lines.length - 1) {
+          listContent += "<br>";
+        }
+      }
+      
+      if (inList) {
+        listContent += "</ul>";
+      }
+      
+      cleanResponse = listContent;
+    }
+    
+    console.log("✅ Chat API request completed successfully");
+    res.json({ 
+      text: cleanResponse, 
+      model: "gemini-2.5-flash",
+      success: true 
+    });
+  } catch (error) {
+    console.error(
+      "❌ Error calling Chat API:",
+      error.message
+    );
+    res.status(500).json({
+      error: "Failed to get response from AI service",
+      details: error.message,
+      success: false
+    });
+  }
+});
+
+// Country API endpoint (proxy to REST Countries API)
+app.get("/api/country/:name", async (req, res) => {
+  try {
+    const { name } = req.params;
+    console.log(`🔍 Fetching country data for: ${name}`);
+    
+    const response = await axios.get(`https://restcountries.com/v3.1/name/${name}`);
+    
+    console.log(`✅ Country API call success: ${name}`);
+    res.json(response.data);
+  } catch (error) {
+    console.error(
+      "⚠️ Country API error:",
+      error.response?.data || error.message
+    );
+    res
+      .status(error.response?.status || 500)
+      .json({ error: "Failed to get country data", details: error.message });
   }
 });
 

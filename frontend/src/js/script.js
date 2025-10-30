@@ -1,18 +1,8 @@
-// API Configuration for MAIN PAGE
-const COUNTRIES_API = "https://restcountries.com/v3.1";
-const WEATHER_API_KEY = "9f5da2646c399356922ecd13e8493f0b";
-const WEATHER_API = "https://api.openweathermap.org/data/2.5";
-
 // API Configuration for CHAT and MAIN PAGE
 const BACKEND_API_URL = "http://localhost:3000";
 
-// DOM Elements untuk MAIN PAGE
-const countryInput = document.getElementById("countryInput");
-const searchBtn = document.getElementById("searchBtn");
-const resultSection = document.getElementById("result");
-const weatherSection = document.getElementById("weatherSection");
-const loadingElement = document.getElementById("loading");
-const errorSection = document.getElementById("error");
+// DOM Elements untuk MAIN PAGE - will be assigned on DOMContentLoaded
+let countryInputEl, searchBtnEl, resultSectionEl, weatherSectionEl, loadingElementEl, errorSectionEl;
 
 // DOM Elements untuk CHAT (dari chat-ai.html)
 let chatMessages, chatInput, sendBtn, typingIndicator;
@@ -40,8 +30,7 @@ function initChatWidget() {
 
   // Show chat widget
   chatToggle.addEventListener("click", () => {
-    chatWidget.classList.remove("hidden");
-    chatWidget.classList.remove("h-15");
+    chatWidget.classList.remove("h-[60px]");
     chatWidget.classList.add("h-[500px]");
     chatToggle.style.display = "none";
     // Focus ke input ketika widget dibuka
@@ -55,7 +44,7 @@ function initChatWidget() {
     chatWidget.classList.toggle("minimized");
     if (chatWidget.classList.contains("minimized")) {
       chatWidget.classList.remove("h-[500px]");
-      chatWidget.classList.add("h-15");
+      chatWidget.classList.add("h-[60px]");
       chatWidget.style.overflow = "hidden";
     } else {
       chatWidget.classList.add("h-[500px]");
@@ -145,18 +134,16 @@ function addMessage(text, isUser = false) {
   }
 
   const messageDiv = document.createElement("div");
-  messageDiv.className = `message ${isUser ? 
-    "self-end bg-primary text-white p-4 py-3.5 rounded-xl rounded-bl-md" : 
+  messageDiv.className = `message ${isUser ?
+    "self-end bg-primary text-white p-4 py-3.5 rounded-xl rounded-bl-md" :
     "self-start bg-white text-gray-700 p-4 py-3.5 rounded-xl rounded-br-md border border-gray-200"}`;
 
   // Check if text contains weather info to format it specially
   if (text.includes("Suhu:") && text.includes("Kondisi:")) {
     // Format as weather info
-    messageDiv.innerHTML = `<div>${
-      text.split("Data Cuaca")[0]
-    }<br><div class="weather-info">${
-      text.split("Data Cuaca:")[1] || text
-    }</div></div>`;
+    messageDiv.innerHTML = `<div>${text.split("Data Cuaca")[0]
+      }<br><div class="weather-info">${text.split("Data Cuaca:")[1] || text
+      }</div></div>`;
   } else {
     // Use innerHTML to render HTML formatting (bold, italic, etc.)
     messageDiv.innerHTML = text;
@@ -187,12 +174,13 @@ async function getWeatherDataForChat(city) {
     const response = await fetch(`${BACKEND_API_URL}/api/weather/${city}`);
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
       if (response.status === 404) {
         throw new Error(`Kota "${city}" tidak ditemukan`);
       } else if (response.status === 401) {
-        throw new Error("API key cuaca tidak valid");
+        throw new Error(`API key cuaca tidak valid: ${errorData.message || 'Invalid API key'}`);
       } else {
-        throw new Error(`Gagal mendapatkan data cuaca: ${response.status}`);
+        throw new Error(`Gagal mendapatkan data cuaca: ${errorData.message || response.statusText}`);
       }
     }
 
@@ -316,7 +304,8 @@ function extractCityName(message) {
 // Fungsi 5: Kirim ke Gemini AI (via backend)
 async function sendToGemini(message, weatherContext = "") {
   try {
-    const response = await fetch(`${BACKEND_API_URL}/api/gemini`, {
+    // Try the /api/chat endpoint first (as specified in requirements)
+    const response = await fetch(`${BACKEND_API_URL}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -324,28 +313,72 @@ async function sendToGemini(message, weatherContext = "") {
       body: JSON.stringify({
         message: message,
         weatherContext: weatherContext,
+        // Include conversation history as specified in requirements
+        messages: conversationHistory
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("Gemini API error:", errorData);
-      throw new Error(
-        `API error: ${response.status} - ${JSON.stringify(errorData)}`
-      );
+      console.error("Chat API error:", errorData);
+      let errorMessage = `API error: ${response.status}`;
+      if (errorData.details) {
+        errorMessage += ` - ${errorData.details}`;
+      } else {
+        errorMessage += ` - ${JSON.stringify(errorData)}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
 
     if (data.text) {
       return data.text;
+    } else if (data.success === false) {
+      throw new Error(data.error || "Respons dari API tidak sesuai format yang diharapkan");
     } else {
       console.error("Unexpected API response:", data);
       throw new Error("Respons dari API tidak sesuai format yang diharapkan");
     }
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    throw error;
+    console.error("Error calling Chat API, falling back to Gemini API:", error);
+    // Fallback to /api/gemini if /api/chat fails
+    try {
+      const response = await fetch(`${BACKEND_API_URL}/api/gemini`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: message,
+          weatherContext: weatherContext,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Gemini API error:", errorData);
+        let errorMessage = `API error: ${response.status}`;
+        if (errorData.details) {
+          errorMessage += ` - ${errorData.details}`;
+        } else {
+          errorMessage += ` - ${JSON.stringify(errorData)}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+
+      if (data.text) {
+        return data.text;
+      } else {
+        console.error("Unexpected API response:", data);
+        throw new Error("Respons dari API tidak sesuai format yang diharapkan");
+      }
+    } catch (fallbackError) {
+      console.error("Error calling Gemini API:", fallbackError);
+      throw fallbackError;
+    }
   }
 }
 
@@ -441,15 +474,14 @@ async function handleSendMessage() {
         `Maaf, ${error.message}. Silakan coba nama kota yang lain.`,
         false
       );
-    } else if (error.message.includes("terlalu banyak")) {
+    } else if (error.message.includes("503 Service Unavailable") || error.message.includes("terlalu banyak")) {
       addMessage(
-        "Maaf, saat ini server sedang sibuk. Silakan coba beberapa saat lagi.",
+        "Maaf, layanan AI sedang sibuk atau tidak tersedia sementara. Silakan coba beberapa saat lagi.",
         false
       );
     } else {
       addMessage(
-        `Maaf, terjadi kesalahan: ${
-          error.message || "Tidak dapat memproses permintaan Anda saat ini."
+        `Maaf, terjadi kesalahan: ${error.message || "Tidak dapat memproses permintaan Anda saat ini."
         } Silakan coba lagi.`,
         false
       );
@@ -478,17 +510,16 @@ function hideTyping() {
 
 // ==================== MAIN PAGE FUNCTIONS (existing code) ====================
 
-// Event Listeners untuk main page
-searchBtn.addEventListener("click", searchCountry);
-countryInput.addEventListener("keypress", function (event) {
-  if (event.key === "Enter") {
-    searchCountry();
-  }
-});
+// Event Listeners will be added in DOMContentLoaded
 
 // Enhanced country search with weather
 async function searchCountry() {
-  const countryName = countryInput.value.trim();
+  if (!countryInputEl) {
+    console.error("countryInput element not found");
+    return;
+  }
+
+  const countryName = countryInputEl.value.trim();
   if (!countryName) {
     showError("⚠️ Masukkan nama negara terlebih dahulu!");
     return;
@@ -500,13 +531,18 @@ async function searchCountry() {
   hideError();
 
   try {
-    const countryResponse = await fetch(`${COUNTRIES_API}/name/${countryName}`);
+    const countryResponse = await fetch(`${BACKEND_API_URL}/api/country/${countryName}`);
     if (!countryResponse.ok) {
-      throw new Error("Negara tidak ditemukan!");
+      const errorData = await countryResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || "Negara tidak ditemukan!");
     }
 
     const countryData = await countryResponse.json();
     const country = countryData[0];
+
+    if (!country) {
+      throw new Error("Negara tidak ditemukan!");
+    }
 
     displayCountryInfo(country);
 
@@ -537,23 +573,54 @@ async function getWeatherData(city, coordinates, countryName) {
   try {
     const weatherResponse = await fetch(`${BACKEND_API_URL}/api/weather/${city}`);
     if (!weatherResponse.ok) {
-      throw new Error("Data cuaca tidak tersedia");
+      const errorData = await weatherResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || "Data cuaca tidak tersedia");
     }
 
     const weatherData = await weatherResponse.json();
     displayWeatherInfo(weatherData, countryName, coordinates);
   } catch (error) {
-    console.log("Weather data unavailable:", error);
+    console.log("Weather data unavailable:", error.message);
+    const weatherSection = document.getElementById("weatherSection");
+    if (weatherSection) {
+      // Show a message that weather data is unavailable but still display season prediction
+      weatherSection.innerHTML = `
+        <div class="weather-header text-center mb-8">
+          <h3 class="text-3xl mb-3 text-shadow">🌤️ Cuaca Tidak Tersedia</h3>
+          <p class="text-lg">Gagal mengambil data cuaca untuk ${city}</p>
+        </div>
+        <div class="season-prediction bg-white bg-opacity-10 p-7 rounded-xl mt-5 backdrop-blur-md">
+          <div class="season-title text-center mb-6">
+            <h4 class="text-2xl mb-3">🔮 Prediksi Musim di ${countryName}</h4>
+            <p>Berdasarkan lokasi geografis dan data historis</p>
+          </div>
+        </div>
+      `;
+      weatherSection.style.display = "block";
+      weatherSection.style.opacity = "0";
+      weatherSection.style.background = "linear-gradient(135deg, #667eea, #764ba2)";
+      weatherSection.style.transition = "opacity 0.5s ease-in-out";
+      setTimeout(() => {
+        weatherSection.style.opacity = "1";
+      }, 10);
+    }
+
+    // Still try to show season prediction
     displaySeasonPrediction(coordinates, countryName);
   }
 }
 
 // Display country information
 function displayCountryInfo(country) {
+  if (!resultSectionEl) {
+    console.error("resultSection element not found");
+    return;
+  }
+
   const currencies = country.currencies
     ? Object.values(country.currencies)
-        .map((c) => `${c.name} (${c.symbol || "N/A"})`)
-        .join(", ")
+      .map((c) => `${c.name} (${c.symbol || "N/A"})`)
+      .join(", ")
     : "Tidak ada data";
 
   const languages = country.languages
@@ -565,7 +632,7 @@ function displayCountryInfo(country) {
     ? country.timezones.slice(0, 3).join(", ")
     : "Tidak ada data";
 
-  resultSection.innerHTML = `
+  resultSectionEl.innerHTML = `
         <div class="flex items-center gap-5 mb-8 pb-5 border-b border-gray-200">
             <div class="text-5xl filter drop-shadow-lg">${country.flag}</div>
             <div>
@@ -606,13 +673,12 @@ function displayCountryInfo(country) {
                 </div>
                 <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-md border-l-4 border-primary transition-transform duration-300 hover:-translate-y-1">
                     <strong class="text-primary text-xs uppercase tracking-wider block mb-2">🚗 Sisi Mengemudi</strong>
-                    <span>${
-                      country.car?.side
-                        ? country.car.side === "left"
-                          ? "Kiri"
-                          : "Kanan"
-                        : "Tidak ada data"
-                    }</span>
+                    <span>${country.car?.side
+      ? country.car.side === "left"
+        ? "Kiri"
+        : "Kanan"
+      : "Tidak ada data"
+    }</span>
                 </div>
             </div>
 
@@ -644,16 +710,28 @@ function displayCountryInfo(country) {
         </div>
     `;
 
+  // Add fade-in animation
+  resultSectionEl.style.display = "block";
+  resultSectionEl.style.opacity = "0";
+  resultSectionEl.style.transition = "opacity 0.5s ease-in-out";
+  setTimeout(() => {
+    resultSectionEl.style.opacity = "1";
+  }, 10);
+
   initializeMap(coordinates[0], coordinates[1], country.name.common);
-  resultSection.style.display = "block";
 }
 
 // Display weather information
 function displayWeatherInfo(weatherData, countryName, coordinates) {
+  if (!weatherSectionEl) {
+    console.error("weatherSection element not found");
+    return;
+  }
+
   const weatherIcon = getWeatherIcon(weatherData.weather[0].main);
   const season = predictSeason(coordinates[0], new Date().getMonth());
 
-  weatherSection.innerHTML = `
+  weatherSectionEl.innerHTML = `
         <div class="weather-header text-center mb-8">
             <h3 class="text-3xl mb-3 text-shadow">🌤️ Informasi Cuaca di ${weatherData.name}, ${countryName}</h3>
             <p class="text-lg">Data real-time dari stasiun meteorologi</p>
@@ -711,10 +789,15 @@ function displayWeatherInfo(weatherData, countryName, coordinates) {
         ${displaySeasonPrediction(coordinates, countryName, season)}
     `;
 
-  weatherSection.style.display = "block";
-  weatherSection.style.background = "linear-gradient(135deg, #667eea, #764ba2)";
-}
-
+  // Add fade-in animation
+  weatherSectionEl.style.display = "block";
+  weatherSectionEl.style.opacity = "0";
+  weatherSectionEl.style.background = "linear-gradient(135deg, #667eea, #764ba2)";
+  weatherSectionEl.style.transition = "opacity 0.5s ease-in-out";
+      setTimeout(() => {
+      weatherSectionEl.style.opacity = "1";
+    }, 10);
+  }
 // Predict season based on latitude and month
 function predictSeason(lat, month) {
   const hemisphere = lat >= 0 ? "northern" : "southern";
@@ -767,8 +850,8 @@ function displaySeasonPrediction(
     },
   ];
 
-  return `
-        <div class="season-prediction bg-white bg-opacity-10 p-7 rounded-xl mt-5 backdrop-blur-md">
+  const seasonPredictionHtml = `
+  < div class="season-prediction bg-white bg-opacity-10 p-7 rounded-xl mt-5 backdrop-blur-md" >
             <div class="season-title text-center mb-6">
                 <h4 class="text-2xl mb-3">🔮 Prediksi Musim di ${countryName}</h4>
                 <p>Berdasarkan lokasi geografis dan data historis</p>
@@ -797,8 +880,16 @@ function displaySeasonPrediction(
                   )
                   .join("")}
             </div>
-        </div>
-    `;
+        </div >
+  `;
+  
+  // If called from within weather section, append to that section
+  // Otherwise, find the weather section and append
+  if (weatherSectionEl) {
+    weatherSectionEl.innerHTML += seasonPredictionHtml;
+  }
+  
+  return seasonPredictionHtml;
 }
 
 // Get weather icon
@@ -825,97 +916,167 @@ function getWeatherIcon(weatherMain) {
 
 // Initialize map
 function initializeMap(lat, lng, countryName) {
-  if (window.map) {
-    window.map.remove();
-  }
-
-  const mapContainer = document.getElementById("countryMap");
-  mapContainer.innerHTML = "";
-
+  // Wait a bit to ensure the map container is rendered in the DOM
   setTimeout(() => {
-    window.map = L.map("countryMap").setView([lat, lng], 5);
+    if (window.map) {
+      try {
+        window.map.remove();
+      } catch (e) {
+        console.log("Map was already removed or doesn't exist");
+      }
+    }
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 18,
-    }).addTo(window.map);
-
-    L.marker([lat, lng])
-      .addTo(window.map)
-      .bindPopup(`<b>${countryName}</b><br>Lat: ${lat}, Lng: ${lng}`)
-      .openPopup();
+    const mapContainer = document.getElementById("countryMap");
+    if (!mapContainer) {
+      console.error("Map container element not found");
+      return;
+    }
 
     setTimeout(() => {
-      window.map.invalidateSize();
-    }, 100);
-  }, 50);
+      try {
+        window.map = L.map("countryMap").setView([lat, lng], 5);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+          maxZoom: 18,
+        }).addTo(window.map);
+
+        L.marker([lat, lng])
+          .addTo(window.map)
+          .bindPopup(`< b > ${ countryName }</b > <br>Lat: ${lat}, Lng: ${lng}`)
+  .openPopup();
+
+        setTimeout(() => {
+          if (window.map) {
+    window.map.invalidateSize();
+          }
+        }, 100);
+      } catch (e) {
+    console.error("Error initializing map:", e);
+      }
+    }, 100); // Additional delay to ensure DOM is fully updated
+  }, 100);
 }
 
-// UI Helper functions
-function showLoading() {
-  loadingElement.style.display = "block";
-  searchBtn.disabled = true;
-  searchBtn.innerHTML = "⏳ Mencari...";
-  searchBtn.style.opacity = "0.7";
+  // UI Helper functions
+  function showLoading() {
+  if (loadingElementEl) loadingElementEl.style.display = "block";
+  if (searchBtnEl) {
+    searchBtnEl.disabled = true;
+  searchBtnEl.innerHTML = "⏳ Mencari...";
+  searchBtnEl.style.opacity = "0.7";
+  }
 }
 
-function hideLoading() {
-  loadingElement.style.display = "none";
-  searchBtn.disabled = false;
-  searchBtn.innerHTML = "🌤️ Cari Informasi & Cuaca";
-  searchBtn.style.opacity = "1";
+  function hideLoading() {
+  if (loadingElementEl) loadingElementEl.style.display = "none";
+  if (searchBtnEl) {
+    searchBtnEl.disabled = false;
+  searchBtnEl.innerHTML = "🌤️ Cari Informasi & Cuaca";
+  searchBtnEl.style.opacity = "1";
+  }
 }
 
-function showError(message) {
-  errorSection.innerHTML = `
-        <div class="text-center">
-            <h3 class="text-red-700 text-xl mb-4">❌ Oops! Terjadi Kesalahan</h3>
-            <p class="mb-3 text-lg">${message}</p>
-            <p class="text-gray-500 text-sm">💡 Tips: Gunakan nama negara dalam bahasa Inggris (contoh: "indonesia", "japan")</p>
-        </div>
-    `;
-  errorSection.style.display = "block";
+  function showError(message) {
+    console.log("showError called with message:", message); // Added for debugging
+  if (!errorSectionEl) {
+    console.error("errorSection element not found");
+  return;
+  }
+
+  errorSectionEl.innerHTML = `
+  <div class="text-center">
+    <h3 class="text-red-700 text-xl mb-4">❌ Oops! Terjadi Kesalahan</h3>
+    <p class="mb-3 text-lg">${message}</p>
+    <p class="text-gray-500 text-sm">💡 Tips: Gunakan nama negara dalam bahasa Inggris (contoh: "indonesia", "japan")</p>
+  </div>
+  `;
+  // Add fade-in animation
+  errorSectionEl.style.display = "block";
+  errorSectionEl.style.opacity = "0";
+  errorSectionEl.style.transition = "opacity 0.5s ease-in-out";
+  setTimeout(() => {
+    errorSectionEl.style.opacity = "1";
+  }, 10);
 }
 
-function hideError() {
-  errorSection.style.display = "none";
+  function hideError() {
+  if (!errorSectionEl) return;
+
+  errorSectionEl.style.opacity = "0";
+  setTimeout(() => {
+    errorSectionEl.style.display = "none";
+  }, 300); // Match the transition duration
 }
 
-function hideResult() {
-  resultSection.style.display = "none";
+  function hideResult() {
+  if (!resultSectionEl) return;
+
+  resultSectionEl.style.opacity = "0";
+  setTimeout(() => {
+    resultSectionEl.style.display = "none";
+  }, 300); // Match the transition duration
 }
 
-function hideWeather() {
-  weatherSection.style.display = "none";
+  function hideWeather() {
+  if (!weatherSectionEl) return;
+
+  weatherSectionEl.style.opacity = "0";
+  setTimeout(() => {
+    weatherSectionEl.style.display = "none";
+  }, 300); // Match the transition duration
 }
 
-// ==================== INITIALIZE EVERYTHING ====================
+  // ==================== INITIALIZE EVERYTHING ====================
 
-// Initialize page
-document.addEventListener("DOMContentLoaded", function () {
+  // Initialize page
+  document.addEventListener("DOMContentLoaded", function () {
+    // DOM Elements untuk MAIN PAGE (ambil lagi setelah DOM selesai load)
+    countryInputEl = document.getElementById("countryInput");
+  searchBtnEl = document.getElementById("searchBtn");
+  resultSectionEl = document.getElementById("result");
+  weatherSectionEl = document.getElementById("weatherSection");
+  loadingElementEl = document.getElementById("loading");
+  errorSectionEl = document.getElementById("error");
+
   // Initialize main page functionality
   const cloudCards = document.querySelectorAll(".cloud-card");
   cloudCards.forEach((card, index) => {
     card.style.animationDelay = `${index * 0.2}s`;
   });
 
-  countryInput.focus();
+  if (countryInputEl) {
+    countryInputEl.focus();
 
   const sampleCountries = ["Indonesia", "Japan", "Brazil", "Germany", "Canada"];
   const randomCountry =
-    sampleCountries[Math.floor(Math.random() * sampleCountries.length)];
-  countryInput.placeholder = `Ketik nama negara (contoh: ${randomCountry.toLowerCase()})...`;
+  sampleCountries[Math.floor(Math.random() * sampleCountries.length)];
+  countryInputEl.placeholder = `Ketik nama negara (contoh: ${randomCountry.toLowerCase()})...`;
+  }
+
+  // Event Listeners untuk main page
+  if (searchBtnEl) {
+    searchBtnEl.addEventListener("click", searchCountry);
+  }
+
+  if (countryInputEl) {
+    countryInputEl.addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {
+        searchCountry();
+      }
+    });
+  }
 
   // Initialize chat functionality
   initChatWidget();
   initChatFunctionality();
 });
 
-console.log(`
-🌍 World Explorer - Cloud Computing UTS
-📍 Integrated with REST Countries API
-🌤️ Integrated with Weather Data
-🗺️ Multiple Cloud Services Implementation
-🔮 Seasonal Prediction Feature
-💬 Floating Chat Widget Activated
-`);
+  console.log(`
+  🌍 World Explorer - Cloud Computing UTS
+  📍 Integrated with REST Countries API
+  🌤️ Integrated with Weather Data
+  🗺️ Multiple Cloud Services Implementation
+  🔮 Seasonal Prediction Feature
+  💬 Floating Chat Widget Activated
+  `);
