@@ -20,8 +20,15 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "../../frontend/src
 app.get("/api/weather/:city", async (req, res) => {
   try {
     const { city } = req.params;
-    const WEATHER_API_KEY =
-      process.env.WEATHER_API_KEY || "9f5da2646c399356922ecd13e8493f0b";
+    const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+    
+    if (!WEATHER_API_KEY) {
+      console.error("❌ Weather API key is not configured in environment variables");
+      return res.status(500).json({ 
+        error: "Weather API key not configured", 
+        details: "Please set WEATHER_API_KEY in your environment variables" 
+      });
+    }
 
     const response = await axios.get(
       `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=id`
@@ -45,8 +52,15 @@ app.post("/api/gemini", async (req, res) => {
     const { message, weatherContext } = req.body;
     if (!message) return res.status(400).json({ error: "Message is required" });
 
-    const GEMINI_API_KEY =
-      process.env.GEMINI_API_KEY || "AIzaSyAv7EhBNHVi3JtASjeraQ0vWZmRbVomnNM";
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    
+    if (!GEMINI_API_KEY) {
+      console.error("❌ Gemini API key is not configured in environment variables");
+      return res.status(500).json({ 
+        error: "Gemini API key not configured", 
+        details: "Please set GEMINI_API_KEY in your environment variables" 
+      });
+    }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     
@@ -159,7 +173,10 @@ app.use((req, res) => res.status(404).send("Page not found"));
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
-  console.log(`📡 Ready to use Gemini 2.5 Flash model via SDK`);
+  console.log(`📡 Weather Assistant API is ready!`);
+  console.log(`🌍 Frontend served at http://localhost:${PORT}`);
+  console.log(`🌤️ Weather API available at http://localhost:${PORT}/api/weather/:city`);
+  console.log(`🤖 AI Chat API available at http://localhost:${PORT}/api/gemini`);
 });
 
 process.on("SIGINT", () => {

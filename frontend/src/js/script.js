@@ -1,9 +1,9 @@
-// API Configuration untuk MAIN PAGE
+// API Configuration for MAIN PAGE
 const COUNTRIES_API = "https://restcountries.com/v3.1";
 const WEATHER_API_KEY = "9f5da2646c399356922ecd13e8493f0b";
 const WEATHER_API = "https://api.openweathermap.org/data/2.5";
 
-// API Configuration untuk CHAT (dari chat-ai.html)
+// API Configuration for CHAT and MAIN PAGE
 const BACKEND_API_URL = "http://localhost:3000";
 
 // DOM Elements untuk MAIN PAGE
@@ -184,9 +184,7 @@ async function getWeatherDataForChat(city) {
   try {
     console.log(`Fetching weather data for: ${city}`);
 
-    const response = await fetch(
-      `${WEATHER_API}?q=${city}&appid=${WEATHER_API_KEY}&units=metric&lang=id`
-    );
+    const response = await fetch(`${BACKEND_API_URL}/api/weather/${city}`);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -537,7 +535,7 @@ async function searchCountry() {
 // Get weather data untuk main page
 async function getWeatherData(city, coordinates, countryName) {
   try {
-    const weatherResponse = await fetch(`/api/weather/${city}`);
+    const weatherResponse = await fetch(`${BACKEND_API_URL}/api/weather/${city}`);
     if (!weatherResponse.ok) {
       throw new Error("Data cuaca tidak tersedia");
     }
