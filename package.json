@@ -1,13 +1,19 @@
 {
-  "name": "project-website-api",
+  "name": "weather-assistant",
   "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
+  "description": "A weather assistant application with AI integration",
+  "main": "backend/src/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node backend/src/server.js",
+    "dev": "node backend/src/server.js"
   },
-  "keywords": [],
+  "keywords": [
+    "weather",
+    "api",
+    "ai",
+    "assistant"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

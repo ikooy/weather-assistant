@@ -8,15 +8,13 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Serve static files from the frontend directory
 app.use(cors());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, "../../frontend/src")));
 app.use(express.json());
 
 // Home routes
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
-app.get("/chat", (req, res) =>
-  res.sendFile(path.join(__dirname, "chat-ai.html"))
-);
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "../../frontend/src/index.html")));
 
 // 🌤️ Weather API endpoint
 app.get("/api/weather/:city", async (req, res) => {
