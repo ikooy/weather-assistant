@@ -17,6 +17,8 @@
     --summer: #FF9800;
     --autumn: #FF5722;
     --winter: #2196F3;
+    --rainy: #2196F3;
+    --dry: #FF9800;
 }
 
 body {
@@ -460,7 +462,7 @@ main {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Season Prediction - NEW */
+/* Season Prediction - DIPERBAIKI */
 .season-prediction {
     background: rgba(255, 255, 255, 0.1);
     padding: 25px;
@@ -472,13 +474,24 @@ main {
 .season-title {
     text-align: center;
     margin-bottom: 20px;
+}
+
+.season-title h4 {
     font-size: 1.5em;
+    margin-bottom: 8px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.season-title p {
+    opacity: 0.9;
+    font-size: 0.9em;
 }
 
 .seasons-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
+    margin-bottom: 15px;
 }
 
 .season-card {
@@ -487,8 +500,15 @@ main {
     text-align: center;
     color: white;
     font-weight: bold;
+    transition: all 0.3s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
+/* Sistem 4 Musim untuk Non-Tropis */
 .season-spring {
     background: linear-gradient(135deg, var(--spring), #45a049);
 }
@@ -505,10 +525,37 @@ main {
     background: linear-gradient(135deg, var(--winter), #1976d2);
 }
 
+/* Sistem 2 Musim untuk Tropis - BARU */
+.season-rainy {
+    background: linear-gradient(135deg, var(--rainy), #1976d2);
+}
+
+.season-dry {
+    background: linear-gradient(135deg, var(--dry), #f57c00);
+}
+
 .current-season {
     transform: scale(1.05);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     border: 2px solid white;
+    position: relative;
+}
+
+.current-season::after {
+    content: '⭐';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1.2em;
+}
+
+/* Disclaimer untuk prediksi musim */
+.season-disclaimer {
+    text-align: center;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 15px;
+    font-style: italic;
 }
 
 /* Cloud Info Section */
@@ -645,4 +692,345 @@ footer {
     .seasons-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .season-card {
+        min-height: 100px;
+        padding: 15px;
+    }
+
+    .season-card div {
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 480px) {
+    .seasons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .season-card {
+        min-height: 80px;
+        padding: 12px;
+    }
+
+    .weather-section {
+        padding: 20px;
+    }
+
+    .season-prediction {
+        padding: 20px;
+    }
+}
+
+/* Animasi tambahan untuk musim */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.current-season {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Style untuk chat widget yang sudah ada di HTML */
+.chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 380px;
+    height: 500px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    border: 2px solid #667eea;
+}
+
+.chat-widget.minimized {
+    height: 60px;
+    overflow: hidden;
+}
+
+.chat-widget.hidden {
+    display: none;
+}
+
+.chat-widget-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px;
+    border-radius: 13px 13px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+}
+
+.chat-widget-controls button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 10px;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-widget-controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-widget-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8f9fa;
+}
+
+.chat-widget-input {
+    padding: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    background: white;
+    border-radius: 0 0 13px 13px;
+}
+
+.chat-widget-input input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 20px;
+    outline: none;
+    font-size: 14px;
+}
+
+.chat-widget-input input:focus {
+    border-color: #667eea;
+}
+
+.chat-widget-input button {
+    padding: 12px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.chat-widget-input button:hover {
+    background: #5a67d8;
+}
+
+/* Chat Toggle Button */
+.chat-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 999;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.chat-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* PERBAIKAN UNTUK CHAT MESSAGES */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+}
+
+.message {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    word-wrap: break-word;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+    line-height: 1.4;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-message {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+    margin-left: auto;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.ai-message {
+    background: #ffffff;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
+    border: 1px solid #e0e0e0;
+    margin-right: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* PERBAIKAN: Pastikan pesan user selalu terlihat */
+.user-message,
+.ai-message {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.typing-indicator {
+    display: none;
+    padding: 12px 16px;
+    background: #f1f3f5;
+    color: #666;
+    border-radius: 18px;
+    align-self: flex-start;
+    font-style: italic;
+    border-bottom-left-radius: 5px;
+    margin-right: auto;
+}
+
+.weather-info {
+    background: #e3f2fd;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 8px;
+    border-left: 3px solid #2196F3;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 5px 0;
+    font-size: 0.9em;
+    border-left: 3px solid #f44336;
+}
+
+/* PERBAIKAN: Scrollbar untuk chat */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* PERBAIKAN: Auto scroll ke bawah */
+.chat-messages {
+    scroll-behavior: smooth;
+}
+
+/* PERBAIKAN: Focus state untuk input chat */
+.chat-widget-input input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+/* PERBAIKAN: Hover effect untuk send button */
+.chat-widget-input button:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(90, 103, 216, 0.3);
+}
+
+/* PERBAIKAN: Responsive chat widget */
+@media (max-width: 480px) {
+    .chat-widget {
+        width: calc(100vw - 40px);
+        height: 70vh;
+        right: 20px;
+        left: 20px;
+        bottom: 20px;
+    }
+
+    .chat-widget.minimized {
+        height: 60px;
+        width: auto;
+        right: 20px;
+        left: auto;
+    }
+
+    .message {
+        max-width: 90%;
+    }
+}
+
+/* PERBAIKAN: Animation untuk new messages */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message {
+    animation: slideIn 0.2s ease-out;
 }

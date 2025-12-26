@@ -41,7 +41,7 @@ app.get("/api/weather/:city", async (req, res) => {
   }
 });
 
-// 🤖 Gemini AI endpoint (using Google Gen AI SDK with gemini-2.5-flash)
+// 🤖 Gemini AI endpoint - DIPERBAIKI UNTUK GREETING
 app.post("/api/gemini", async (req, res) => {
   try {
     const { message, weatherContext } = req.body;
@@ -51,38 +51,107 @@ app.post("/api/gemini", async (req, res) => {
       process.env.GEMINI_API_KEY || "AIzaSyAv7EhBNHVi3JtASjeraQ0vWZmRbVomnNM";
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    
-    // Prepare system instruction and user prompt
+
+    // BUAT TANGGAL REAL-TIME YANG SELALU UPDATE
+    const now = new Date();
+    const currentDate = now.toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const currentTime = now.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    // BUAT TANGGAL BESOK UNTUK REFERENSI
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    const tomorrowDate = tomorrow.toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // PERBAIKAN: System instruction yang lebih fleksibel
     let systemInstruction = "";
     let finalPrompt = message;
 
-    if (weatherContext) {
-      systemInstruction = `Kamu adalah asisten AI cuaca yang berperan menjelaskan informasi cuaca harian secara menarik, rapi, dan profesional.
+    // Deteksi apakah ini greeting
+    const isGreeting = /^(halo|hello|hai|hi|selamat)/i.test(message);
 
-Tugasmu:
-- Gunakan gaya bahasa santai, friendly, dan mudah dipahami.
-- Format jawaban agar rapi dengan format HTML berikut:
-  - Gunakan **bold** untuk istilah penting atau highlight data utama (contoh: **Suhu: 26°C**).
-  - Gunakan *italic* bila ingin menekankan kata tertentu (contoh: *agak gerah*).
-  - Gunakan bullet point untuk data-data spesifik (contoh: "* **Suhu:** 25°C")
-  - Pisahkan penjelasan menjadi paragraf pendek agar enak dibaca (gunakan \\n untuk baris baru).
-  - Gunakan <strong>, <em>, <br>, dan <ul>/<li> untuk format yang akan dirender di browser.
-- Tambahkan konteks dari data cuaca jika ada.
-- Gunakan emoji ringan dan relevan (tanpa berlebihan) — misal ☀️🌧️💨🔥❄️.
-- Gunakan bahasa Indonesia yang gaul tapi sopan, mirip gaya asisten AI friendly (contoh: "Santai, bro! Nih aku bantu...").
-- Akhiri dengan saran atau kesimpulan singkat kalau konteksnya memungkinkan.
-- Jaga supaya tetap faktual berdasarkan data cuaca, tapi bisa memberi sedikit interpretasi ringan (contoh: "kelihatannya bakal mendung lagi nih, bro").
-- Jangan menjawab hal di luar topik cuaca atau permintaan pengguna.`;
+    if (weatherContext) {
+      systemInstruction = `Kamu adalah asisten AI cuaca yang BERFOKUS PADA INFORMASI CUACA SAJA.
+
+INFORMASI WAKTU REAL-TIME:
+- Tanggal saat ini: ${currentDate}
+- Jam saat ini: ${currentTime}
+- Tanggal besok: ${tomorrowDate}
+
+ATURAN KETAT:
+1. UTAMAKAN pertanyaan tentang cuaca, iklim, musim, atau informasi geografis
+2. Untuk salam/greeting (halo, hai, selamat pagi), BOLEH jawab dengan sopan dan arahkan ke topik cuaca
+3. Untuk pertanyaan tanggal/waktu, BOLEH jawab dengan informasi real-time di atas
+4. JANGAN jawab pertanyaan di luar topik cuaca seperti curhat, kehidupan pribadi, dll
+5. Jika ditanya tanggal/jam, SELALU gunakan informasi waktu real-time di atas
+6. Untuk prediksi cuaca, hanya berikan informasi maksimal 7 hari ke depan
+7. Gunakan data cuaca yang diberikan sebagai sumber utama
+8. Jika ditanya "hari ini", gunakan tanggal: ${currentDate}
+9. Jika ditanya "besok", gunakan tanggal: ${tomorrowDate}
+10. Tolak dengan sopan pertanyaan di luar topik cuaca
+
+CONTOH RESPON GREETING:
+- "Halo! Saya asisten AI cuaca. Ada yang bisa saya bantu mengenai cuaca atau iklim?"
+- "Selamat pagi! Siap membantu informasi cuaca hari ini."
+
+FORMAT JAWABAN:
+- Gunakan bahasa Indonesia yang ramah tapi profesional
+- Berikan data faktual dari sumber cuaca
+- Untuk pertanyaan tanggal/waktu, berikan informasi real-time
+- Jangan berikan prediksi untuk lebih dari 1 minggu
+- Jika tidak ada data cuaca, katakan dengan jujur
+- Gunakan format HTML untuk styling (<strong>, <em>, <br>, <ul>/<li>)
+
+DATA CUACA YANG TERSEDIA:
+${weatherContext}`;
+
       finalPrompt = `Pertanyaan pengguna: "${message}"
-${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ''}`;
+${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ""}`;
+    } else {
+      systemInstruction = `Kamu adalah asisten AI cuaca yang khusus membantu informasi cuaca dan iklim.
+
+INFORMASI WAKTU REAL-TIME:
+- Tanggal saat ini: ${currentDate}
+- Jam saat ini: ${currentTime}
+- Tanggal besok: ${tomorrowDate}
+
+ATURAN:
+- UTAMAKAN pertanyaan tentang cuaca, musim, iklim, atau informasi geografis
+- Untuk salam/greeting (halo, hai, selamat pagi), BOLEH jawab dengan sopan dan arahkan ke topik cuaca
+- Untuk pertanyaan tanggal/waktu, BOLEH jawab dengan informasi real-time di atas
+- Tolak dengan sopan pertanyaan di luar topik tersebut  
+- SELALU gunakan informasi waktu real-time di atas ketika ditanya tentang tanggal/waktu
+- Jika ditanya "hari ini", referensikan: ${currentDate}
+- Jika ditanya "besok", referensikan: ${tomorrowDate}
+- Untuk prediksi cuaca, batasi maksimal 7 hari ke depan
+- Berikan informasi yang faktual dan akurat
+- Gunakan bahasa Indonesia yang jelas dan mudah dipahami
+
+CONTOH RESPON GREETING:
+- "Halo! Saya asisten AI cuaca. Ada yang bisa saya bantu mengenai cuaca hari ini?"
+- "Selamat siang! Saya siap membantu dengan informasi cuaca dan iklim."`;
     }
 
-    // Create model with system instruction if available
+    // Create model with system instruction
     let model;
     if (systemInstruction) {
-      model = genAI.getGenerativeModel({ 
+      model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash",
-        systemInstruction: systemInstruction
+        systemInstruction: systemInstruction,
       });
     } else {
       model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -91,21 +160,20 @@ ${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ''}`;
     const result = await model.generateContent(finalPrompt);
     const response = await result.response;
     const text = response.text();
-    
+
     // Format the response to use HTML tags for styling
     let cleanResponse = text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")  // Convert **text** to <strong>text</strong>
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")              // Convert *text* to <em>text</em>
-      .replace(/\n\n/g, "<br><br>")                      // Convert double newlines to paragraph breaks
-      .replace(/\n/g, "<br>");                           // Convert single newlines to <br> tags
-    
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/\n\n/g, "<br><br>")
+      .replace(/\n/g, "<br>");
+
     // Convert bullet points to HTML list format if they exist
     if (cleanResponse.includes("* ")) {
-      // Convert to unordered list
       const lines = cleanResponse.split("<br>");
       let inList = false;
       let listContent = "";
-      
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         if (line.trim().startsWith("* ")) {
@@ -122,20 +190,19 @@ ${weatherContext ? `\nData cuaca relevan:\n${weatherContext}` : ''}`;
           }
           listContent += line;
         }
-        
-        // Add line break if not the last line
+
         if (i < lines.length - 1) {
           listContent += "<br>";
         }
       }
-      
+
       if (inList) {
         listContent += "</ul>";
       }
-      
+
       cleanResponse = listContent;
     }
-    
+
     res.json({ text: cleanResponse, model: "gemini-2.5-flash" });
   } catch (error) {
     console.error(
@@ -162,6 +229,8 @@ app.use((req, res) => res.status(404).send("Page not found"));
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
   console.log(`📡 Ready to use Gemini 2.5 Flash model via SDK`);
+  console.log(`⏰ System time configured for real-time responses`);
+  console.log(`👋 Greeting responses enabled`);
 });
 
 process.on("SIGINT", () => {

@@ -17,16 +17,17 @@ const errorSection = document.getElementById("error");
 // DOM Elements untuk CHAT (dari chat-ai.html)
 let chatMessages, chatInput, sendBtn, typingIndicator;
 
-// Conversation history (dari chat-ai.html)
+// Conversation history (dari chat-ai.html) - DIPERBAIKI
 let conversationHistory = [
   {
     role: "system",
-    content: "Kamu adalah asisten AI cuaca yang ramah dan informatif",
+    content:
+      "Kamu adalah asisten AI cuaca yang HANYA menjawab pertanyaan seputar cuaca, iklim, musim, dan informasi geografis. Tolak dengan sopan pertanyaan di luar topik tersebut.",
   },
   {
     role: "assistant",
     content:
-      "Halo! Saya adalah asisten AI cuaca. Tanyakan informasi cuaca di negara mana pun di dunia!",
+      "Halo! Saya adalah asisten AI cuaca khusus. Saya bisa membantu Anda dengan informasi cuaca, prediksi musim, dan data iklim di seluruh dunia. Apa yang ingin Anda ketahui?",
   },
 ];
 
@@ -126,7 +127,7 @@ function initChatFunctionality() {
   chatInput.focus();
 }
 
-// Fungsi 1: Tambah message ke chat
+// Fungsi 1: Tambah message ke chat - DIPERBAIKI TOTAL
 function addMessage(text, isUser = false) {
   if (!chatMessages) {
     console.error("chatMessages element not found");
@@ -136,17 +137,25 @@ function addMessage(text, isUser = false) {
   const messageDiv = document.createElement("div");
   messageDiv.className = `message ${isUser ? "user-message" : "ai-message"}`;
 
-  // Check if text contains weather info to format it specially
-  if (text.includes("Suhu:") && text.includes("Kondisi:")) {
-    // Format as weather info
-    messageDiv.innerHTML = `<div>${
-      text.split("Data Cuaca")[0]
-    }<br><div class="weather-info">${
-      text.split("Data Cuaca:")[1] || text
-    }</div></div>`;
+  // DEBUG: Log setiap pesan yang ditambahkan
+  console.log(`📝 Adding ${isUser ? "USER" : "AI"} message:`, text);
+
+  // PERBAIKAN: Untuk pesan user, selalu gunakan textContent
+  if (isUser) {
+    messageDiv.textContent = text;
   } else {
-    // Use innerHTML to render HTML formatting (bold, italic, etc.)
-    messageDiv.innerHTML = text;
+    // Untuk pesan AI, check if text contains weather info to format it specially
+    if (text.includes("Suhu:") && text.includes("Kondisi:")) {
+      // Format as weather info
+      messageDiv.innerHTML = `<div>${
+        text.split("Data Cuaca")[0]
+      }<br><div class="weather-info">${
+        text.split("Data Cuaca:")[1] || text
+      }</div></div>`;
+    } else {
+      // Use innerHTML to render HTML formatting (bold, italic, etc.)
+      messageDiv.innerHTML = text;
+    }
   }
 
   chatMessages.appendChild(messageDiv);
@@ -163,7 +172,10 @@ function addMessage(text, isUser = false) {
     ];
   }
 
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // PERBAIKAN: Scroll dengan timeout untuk memastikan element sudah render
+  setTimeout(() => {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }, 50);
 }
 
 // Fungsi 2: Ambil data cuaca dari OpenWeatherMap (via backend)
@@ -200,20 +212,40 @@ function isWeatherQuery(message) {
     "cuaca",
     "weather",
     "suhu",
+    "temperature",
     "hujan",
+    "rain",
     "panas",
+    "hot",
     "dingin",
+    "cold",
     "angin",
+    "wind",
     "awan",
-    "berawan",
-    "hujan",
-    "salju",
-    "kondisi langit",
-    "cerah",
-    "mendung",
-    "badai",
+    "cloud",
+    "musim",
+    "season",
+    "iklim",
+    "climate",
     "kelembaban",
-    "tekanan udara",
+    "humidity",
+    "tekanan",
+    "pressure",
+    "prakiraan",
+    "forecast",
+    "prediksi",
+    "kota",
+    "city",
+    "negara",
+    "country",
+    "lokasi",
+    "location",
+    "hari ini",
+    "today",
+    "besok",
+    "tomorrow",
+    "minggu ini",
+    "this week",
   ];
   const lowerMessage = message.toLowerCase();
   return weatherKeywords.some((keyword) => lowerMessage.includes(keyword));
@@ -258,6 +290,12 @@ function extractCityName(message) {
     "Jakarta",
     "Bandung",
     "Surabaya",
+    "Hari",
+    "Today",
+    "Besok",
+    "Tomorrow",
+    "Minggu",
+    "Week",
   ];
   for (const candidate of candidates) {
     const word = candidate.trim();
@@ -293,6 +331,9 @@ function extractCityName(message) {
         "to",
         "of",
         "is",
+        "hari",
+        "besok",
+        "minggu",
       ].includes(word.toLowerCase())
     ) {
       return word;
@@ -366,7 +407,111 @@ async function getWeatherForAI(message) {
   return formatWeatherDataForChat(weatherData, cityName);
 }
 
-// Handle sending a message
+// Validasi pertanyaan - DIPERBAIKI TOTAL
+function validateWeatherQuery(message) {
+  const allowedTopics = [
+    "cuaca",
+    "weather",
+    "suhu",
+    "temperature",
+    "hujan",
+    "rain",
+    "panas",
+    "hot",
+    "dingin",
+    "cold",
+    "angin",
+    "wind",
+    "awan",
+    "cloud",
+    "musim",
+    "season",
+    "iklim",
+    "climate",
+    "kelembaban",
+    "humidity",
+    "tekanan",
+    "pressure",
+    "prakiraan",
+    "forecast",
+    "prediksi",
+    "kota",
+    "city",
+    "negara",
+    "country",
+    "lokasi",
+    "location",
+    "hari ini",
+    "today",
+    "besok",
+    "tomorrow",
+    "minggu ini",
+    "this week",
+    // TAMBAHAN: Untuk greeting dan tanggal/waktu
+    "halo",
+    "hello",
+    "hai",
+    "hi",
+    "selamat",
+    "pagi",
+    "siang",
+    "sore",
+    "malam",
+    "tanggal",
+    "date",
+    "hari",
+    "day",
+    "jam",
+    "time",
+    "sekarang",
+    "now",
+    "bulan",
+    "month",
+    "tahun",
+    "year",
+    // TAMBAHAN: Kata tanya umum
+    "apakah",
+    "apa",
+    "bagaimana",
+    "bisa",
+    "bantu",
+    "tolong",
+  ];
+
+  const lowerMessage = message.toLowerCase();
+  const isWeatherRelated = allowedTopics.some((topic) =>
+    lowerMessage.includes(topic)
+  );
+
+  // TAMBAHAN: Auto-allow greeting messages
+  const isGreeting = /^(halo|hello|hai|hi|selamat)/i.test(lowerMessage);
+
+  // TAMBAHAN: Auto-allow questions starting with question words
+  const isQuestion = /^(apakah|apa|bagaimana|bisakah|bisa)/i.test(lowerMessage);
+
+  // Jika mengandung kata khusus non-cuaca, tolak
+  const forbiddenTopics = [
+    "curhat",
+    "cerita",
+    "masalah",
+    "masalah pribadi",
+    "psikolog",
+    "sedih",
+    "bahagia",
+    "cerita",
+    "curhat",
+  ];
+  const isForbidden = forbiddenTopics.some((topic) =>
+    lowerMessage.includes(topic)
+  );
+
+  return {
+    isValid: (isWeatherRelated || isGreeting || isQuestion) && !isForbidden,
+    isForbidden: isForbidden,
+  };
+}
+
+// Handle sending a message - PERBAIKAN TOTAL
 async function handleSendMessage() {
   if (!chatInput || !chatMessages) {
     console.error("DOM elements not available");
@@ -375,44 +520,84 @@ async function handleSendMessage() {
   }
 
   const message = chatInput.value.trim();
-  console.log("Message received:", message);
+  console.log("🟢 Message received:", message);
 
   if (!message) {
-    console.log("Message is empty, returning");
+    console.log("🔴 Message is empty, returning");
     return;
   }
 
-  // Add user message to chat
-  addMessage(message, true);
+  // PERBAIKAN PENTING: CLEAR INPUT DULU
   chatInput.value = "";
 
-  // Show typing indicator
+  // PERBAIKAN PENTING: TAMPILKAN PESAN USER SEKARANG!
+  console.log("🟢 Adding user message to chat...");
+  addMessage(message, true);
+
+  // Validasi pertanyaan - SETELAH pesan user ditampilkan
+  const validation = validateWeatherQuery(message);
+  console.log("🟡 Validation result:", validation);
+
+  if (validation.isForbidden) {
+    console.log("🔴 Forbidden topic detected");
+    // Tampilkan typing indicator sebentar
+    showTyping();
+    setTimeout(() => {
+      addMessage(
+        "Maaf, saya adalah asisten AI khusus cuaca dan tidak bisa membantu dengan curhat atau masalah pribadi. Silakan tanyakan tentang cuaca, musim, atau informasi geografis.",
+        false
+      );
+      hideTyping();
+    }, 1000);
+    return;
+  }
+
+  if (!validation.isValid) {
+    console.log("🔴 Invalid topic detected");
+    // Tampilkan typing indicator sebentar
+    showTyping();
+    setTimeout(() => {
+      addMessage(
+        "Saya hanya bisa membantu dengan pertanyaan seputar cuaca, iklim, musim, dan informasi geografis. Ada yang bisa saya bantu mengenai topik tersebut?",
+        false
+      );
+      hideTyping();
+    }, 1000);
+    return;
+  }
+
+  console.log("🟢 Message passed validation, calling AI...");
+
+  // Show typing indicator untuk AI
   showTyping();
 
   try {
     let aiResponse = "";
 
+    // Jika greeting, langsung ke AI tanpa weather data
+    const isGreeting = /^(halo|hello|hai|hi|selamat)/i.test(message);
+
+    if (isGreeting) {
+      console.log("🟢 Greeting detected, sending directly to AI");
+      aiResponse = await sendToGemini(message);
+    }
     // If it's a weather query, get weather data first
-    if (isWeatherQuery(message)) {
-      console.log("Weather query detected, fetching data...");
+    else if (isWeatherQuery(message)) {
+      console.log("🟢 Weather query detected, fetching data...");
       try {
         const weatherContext = await getWeatherForAI(message);
         console.log("Weather context:", weatherContext);
         aiResponse = await sendToGemini(message, weatherContext);
       } catch (weatherError) {
-        console.log(
-          "Weather API failed, sending to AI without weather context:",
-          weatherError.message
-        );
-        const fallbackMessage = `Saya tidak dapat mengambil data cuaca untuk kota tersebut karena: ${weatherError.message}. Namun, saya tetap akan mencoba membantu Anda.`;
-        aiResponse = await sendToGemini(message + ". " + fallbackMessage);
+        console.log("Weather API failed:", weatherError.message);
+        aiResponse = await sendToGemini(message);
       }
     } else {
-      console.log("Non-weather query, sending directly to AI");
+      console.log("🟢 Non-weather query, sending directly to AI");
       aiResponse = await sendToGemini(message);
     }
 
-    console.log("AI response:", aiResponse);
+    console.log("🟢 AI response received");
 
     if (aiResponse && aiResponse.trim().length > 0) {
       addMessage(aiResponse, false);
@@ -423,26 +608,13 @@ async function handleSendMessage() {
       );
     }
   } catch (error) {
-    console.error("Error handling message:", error);
-
-    if (error.message.includes("not found")) {
-      addMessage(
-        `Maaf, ${error.message}. Silakan coba nama kota yang lain.`,
-        false
-      );
-    } else if (error.message.includes("terlalu banyak")) {
-      addMessage(
-        "Maaf, saat ini server sedang sibuk. Silakan coba beberapa saat lagi.",
-        false
-      );
-    } else {
-      addMessage(
-        `Maaf, terjadi kesalahan: ${
-          error.message || "Tidak dapat memproses permintaan Anda saat ini."
-        } Silakan coba lagi.`,
-        false
-      );
-    }
+    console.error("🔴 Error handling message:", error);
+    addMessage(
+      `Maaf, terjadi kesalahan: ${
+        error.message || "Tidak dapat memproses permintaan Anda saat ini."
+      }`,
+      false
+    );
   } finally {
     hideTyping();
   }
@@ -709,8 +881,21 @@ function displayWeatherInfo(weatherData, countryName, coordinates) {
   weatherSection.style.display = "block";
 }
 
-// Predict season based on latitude and month
+// Predict season based on latitude and month - DIPERBAIKI
 function predictSeason(lat, month) {
+  const absLat = Math.abs(lat);
+
+  // Untuk negara tropis (Indonesia, Malaysia, Singapore, Brazil, dll)
+  if (absLat <= 23.5) {
+    // Musim berdasarkan pola hujan di daerah tropis
+    if (month >= 10 || month <= 3) {
+      return "rainy";
+    } else {
+      return "dry";
+    }
+  }
+
+  // Untuk negara non-tropis (sistem 4 musim)
   const hemisphere = lat >= 0 ? "northern" : "southern";
   const adjustedMonth = hemisphere === "southern" ? (month + 6) % 12 : month;
 
@@ -720,7 +905,7 @@ function predictSeason(lat, month) {
   return "winter";
 }
 
-// Display season prediction
+// Display season prediction - DIPERBAIKI
 function displaySeasonPrediction(
   coordinates,
   countryName,
@@ -730,32 +915,53 @@ function displaySeasonPrediction(
     currentSeason = predictSeason(coordinates[0], new Date().getMonth());
   }
 
-  const seasons = [
-    {
-      name: "Musim Semi",
-      id: "spring",
-      emoji: "🌸",
-      desc: "Suhu sedang, bunga bermekaran",
-    },
-    {
-      name: "Musim Panas",
-      id: "summer",
-      emoji: "☀️",
-      desc: "Suhu panas, hari panjang",
-    },
-    {
-      name: "Musim Gugur",
-      id: "autumn",
-      emoji: "🍂",
-      desc: "Suhu sejuk, daun berguguran",
-    },
-    {
-      name: "Musim Dingin",
-      id: "winter",
-      emoji: "⛄",
-      desc: "Suhu dingin, salju mungkin",
-    },
-  ];
+  let seasons = [];
+
+  if (Math.abs(coordinates[0]) <= 23.5) {
+    // Sistem 2 musim untuk tropis
+    seasons = [
+      {
+        name: "Musim Hujan",
+        id: "rainy",
+        emoji: "🌧️",
+        desc: "Curah hujan tinggi, kelembaban tinggi",
+      },
+      {
+        name: "Musim Kemarau",
+        id: "dry",
+        emoji: "☀️",
+        desc: "Curah hujan rendah, cuaca cerah",
+      },
+    ];
+  } else {
+    // Sistem 4 musim untuk non-tropis
+    seasons = [
+      {
+        name: "Musim Semi",
+        id: "spring",
+        emoji: "🌸",
+        desc: "Suhu sedang, bunga bermekaran",
+      },
+      {
+        name: "Musim Panas",
+        id: "summer",
+        emoji: "☀️",
+        desc: "Suhu panas, hari panjang",
+      },
+      {
+        name: "Musim Gugur",
+        id: "autumn",
+        emoji: "🍂",
+        desc: "Suhu sejuk, daun berguguran",
+      },
+      {
+        name: "Musim Dingin",
+        id: "winter",
+        emoji: "⛄",
+        desc: "Suhu dingin, salju mungkin",
+      },
+    ];
+  }
 
   return `
         <div class="season-prediction">
@@ -784,6 +990,9 @@ function displaySeasonPrediction(
                 `
                   )
                   .join("")}
+            </div>
+            <div style="margin-top: 15px; font-size: 0.8em; color: #666; text-align: center;">
+                <em>⚠️ Prediksi berdasarkan pola iklim umum. Dapat bervariasi berdasarkan kondisi lokal.</em>
             </div>
         </div>
     `;
@@ -904,6 +1113,6 @@ console.log(`
 📍 Integrated with REST Countries API
 🌤️ Integrated with Weather Data
 🗺️ Multiple Cloud Services Implementation
-🔮 Seasonal Prediction Feature
+🔮 Seasonal Prediction Feature - IMPROVED
 💬 Floating Chat Widget Activated
 `);
